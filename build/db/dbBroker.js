@@ -94,10 +94,45 @@ export var DBBroker = (function () {
             });
         });
     };
-    DBBroker.prototype.select = function (entity, criteria) {
-        var sql = 'SELECT ';
-        sql += Object.keys(entity).join(', ');
-        return this.executeQuery(sql);
+    DBBroker.prototype.select = function (entitySchema, criteria) {
+        return __awaiter(this, void 0, void 0, function () {
+            var sql, response;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        sql = 'SELECT ';
+                        entitySchema.columns.forEach(function (item, index) {
+                            if (item.getter) {
+                                sql +=
+                                    entitySchema.tableAlias + ".".concat(item.getter, " as \"").concat(String(item.name), "\" ");
+                            }
+                            else {
+                                sql += " ".concat(String(item.name), " ");
+                                if (item.alias) {
+                                    sql += " as \"".concat(item.alias, "\" ");
+                                }
+                            }
+                            if (index < entitySchema.columns.length - 1) {
+                                sql += ' , ';
+                            }
+                        });
+                        sql += " FROM ".concat(entitySchema.tableName, " ").concat(entitySchema.tableAlias);
+                        if (criteria) {
+                            sql += ' WHERE ';
+                            Object.keys(criteria).forEach(function (key, index) {
+                                sql += "".concat(entitySchema.tableAlias, ".").concat(key, " = ").concat(criteria[key], " ");
+                                if (index < Object.keys(criteria).length - 1) {
+                                    sql += ' AND ';
+                                }
+                            });
+                        }
+                        return [4, this.executeQuery(sql)];
+                    case 1:
+                        response = _a.sent();
+                        return [2, response.rows];
+                }
+            });
+        });
     };
     DBBroker.prototype.executeQuery = function (sql, binds) {
         if (binds === void 0) { binds = []; }

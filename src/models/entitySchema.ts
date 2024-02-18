@@ -1,12 +1,14 @@
-export interface EntityMeta<T> {
+export interface EntitySchema<T> {
   tableName: string
+  tableAlias?: string
   primaryKey: string
-  columns: ColumnMeta<T>[]
+  columns: ColumnSchema<T>[]
   data?: T
 }
 
-export interface ColumnMeta<T> {
+export interface ColumnSchema<T> {
   name: keyof T
+  getter?: string
   alias?: string
   type?: string
   required?: boolean

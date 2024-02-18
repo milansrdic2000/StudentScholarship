@@ -1,5 +1,5 @@
 import oracledb, { Connection } from 'oracledb'
-import { EntityMeta } from '../models/entityMeta.js'
+import { EntitySchema } from '../models/entitySchema.js'
 
 export const hello = 'hi mom!'
 export class DBBroker {
@@ -38,13 +38,38 @@ export class DBBroker {
       return err
     }
   }
-  public select<model extends EntityMeta<any>>(
-    entity: model,
+  public async select<schema extends EntitySchema<any>, model>(
+    entitySchema: schema,
     criteria?: Partial<model>
-  ): Promise<any> {
+  ): Promise<model[]> {
     let sql = 'SELECT '
-    sql += Object.keys(entity).join(', ')
-    return this.executeQuery(sql)
+    entitySchema.columns.forEach((item, index) => {
+      if (item.getter) {
+        sql +=
+          entitySchema.tableAlias + `.${item.getter} as "${String(item.name)}" `
+      } else {
+        sql += ` ${String(item.name)} `
+        if (item.alias) {
+          sql += ` as "${item.alias}" `
+        }
+      }
+      if (index < entitySchema.columns.length - 1) {
+        sql += ' , '
+      }
+    })
+    sql += ` FROM ${entitySchema.tableName} ${entitySchema.tableAlias}`
+    if (criteria) {
+      sql += ' WHERE '
+      Object.keys(criteria).forEach((key, index) => {
+        sql += `${entitySchema.tableAlias}.${key} = ${criteria[key]} `
+        if (index < Object.keys(criteria).length - 1) {
+          sql += ' AND '
+        }
+      })
+    }
+
+    const response = await this.executeQuery(sql)
+    return response.rows
   }
   public executeQuery(sql: string, binds: any[] = []): Promise<any> {
     return this.connection.execute(sql, binds)

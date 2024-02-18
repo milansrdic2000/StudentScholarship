@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { getKonkursi } from '../controllers/konkurs.js';
+import { getKonkurs, getKonkursi } from '../controllers/konkurs.js';
 export var konkursRouter = Router();
 konkursRouter.get('/', getKonkursi);
+konkursRouter.get('/:sifraKonkursa', getKonkurs);
 //# sourceMappingURL=konkurs.js.map

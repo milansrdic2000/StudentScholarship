@@ -36,14 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 import asyncHandler from 'express-async-handler';
 import { DBBroker } from '../db/dbBroker.js';
-var konkursMeta = {
-    primaryKey: 'sifraKonkursa',
-    tableName: 'konkurs',
-    columns: [
-        { name: 'sifraKonkursa', primaryKey: true },
-        { name: 'skolskaGodina' },
-    ],
-};
+import { konkursMeta } from '../models/konkurs.js';
 export var getKonkursi = asyncHandler(function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
     var konkursi;
     return __generator(this, function (_a) {
@@ -51,7 +44,19 @@ export var getKonkursi = asyncHandler(function (req, res) { return __awaiter(voi
             case 0: return [4, DBBroker.getInstance().select(konkursMeta)];
             case 1:
                 konkursi = _a.sent();
-                res.json(konkursi.rows);
+                res.json(konkursi);
+                return [2];
+        }
+    });
+}); });
+export var getKonkurs = asyncHandler(function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var konkurs;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4, DBBroker.getInstance().select(konkursMeta, { sifraKonkursa: req.params.sifraKonkursa })];
+            case 1:
+                konkurs = _a.sent();
+                res.json(konkurs);
                 return [2];
         }
     });

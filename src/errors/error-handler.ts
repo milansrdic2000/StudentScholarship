@@ -6,17 +6,19 @@ import { OracleError } from './oracle-error-handler.js'
 export function errorHandler(
   err: HttpError | OracleError | Error,
   req,
-  res,
+  res: Response,
   next
 ) {
+  const response = {
+    success: false,
+    message: err.message,
+  }
   if (err instanceof HttpError) {
-    console.log(err)
-    const st = err.statusCode || 500
-    res.status(st).send(err.message)
+    res.status(err.statusCode || 500).send(response)
   } else if (err instanceof OracleError) {
-    res.status(500).send(err.message)
+    res.status(500).send(response)
   } else {
     console.error(err)
-    res.status(500).send('Internal server error.')
+    res.status(500).send(response)
   }
 }

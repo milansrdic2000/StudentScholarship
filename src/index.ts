@@ -31,11 +31,13 @@ app.use(errorHandler)
 
 async function start() {
   await DBBroker.getInstance().openConnection()
-  // const result = await DBBroker.getInstance().executeQuery(
-  //   'SELECT k.sifrakonkursa "Dadarin", k.skolskagodina "Skolska godina", k.konkursinfo.get_datum_od() "Datum otvaranja", k.konkursinfo.get_datum_do() "Datum zatvaranja", k.konkursinfo.get_broj_mesta() "Broj mesta" FROM konkurs k'
-  // )
+  const result = await DBBroker.getInstance().executeQuery(
+    'SELECT k.sifrakonkursa as dadarin, k.skolskagodina "Skolska godina", k.konkursinfo.get_datum_do() as dadarinski FROM konkurs k'
+  )
 
-  // console.log(result.rows)
+  //  konkursinfo.get_datum_do() "Datum zatvaranja", konkursinfo.get_broj_mesta() "Broj mesta"
+
+  //console.log(result.rows)
 
   console.log('delikventsid')
 }

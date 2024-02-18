@@ -62,11 +62,15 @@ app.use(oracleErrorHandler);
 app.use(errorHandler);
 function start() {
     return __awaiter(this, void 0, void 0, function () {
+        var result;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0: return [4, DBBroker.getInstance().openConnection()];
                 case 1:
                     _a.sent();
+                    return [4, DBBroker.getInstance().executeQuery('SELECT k.sifrakonkursa as dadarin, k.skolskagodina "Skolska godina", k.konkursinfo.get_datum_do() as dadarinski FROM konkurs k')];
+                case 2:
+                    result = _a.sent();
                     console.log('delikventsid');
                     return [2];
             }
