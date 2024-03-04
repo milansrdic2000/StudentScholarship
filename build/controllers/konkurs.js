@@ -36,29 +36,121 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 import asyncHandler from 'express-async-handler';
 import { DBBroker } from '../db/dbBroker.js';
-import { konkursMeta } from '../models/konkurs.js';
-export var getKonkursi = asyncHandler(function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var konkursi;
+import { KonkursSchema } from '../models/konkurs.js';
+import { StavkaKonkursaSchema, } from '../models/stavkaKonkursa.js';
+import { setApiResponse } from '../utils/api-response-util.js';
+export var getKonkursi = asyncHandler(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var stavkaSchema, konkursi;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4, DBBroker.getInstance().select(konkursMeta)];
+            case 0:
+                stavkaSchema = new StavkaKonkursaSchema();
+                stavkaSchema.joinType = 'LEFT';
+                return [4, DBBroker.getInstance().select(new KonkursSchema(), stavkaSchema)];
             case 1:
                 konkursi = _a.sent();
-                res.json(konkursi);
+                return [4, setApiResponse(res, parseKonkurs(konkursi))];
+            case 2:
+                _a.sent();
+                next();
                 return [2];
         }
     });
 }); });
 export var getKonkurs = asyncHandler(function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var konkurs;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4, DBBroker.getInstance().select(konkursMeta, { sifraKonkursa: req.params.sifraKonkursa })];
+    var result, _a, sifraKonkursa, skolskaGodina, datumDo, datumOd, brojMesta, konkurs;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0: return [4, DBBroker.getInstance().select(new KonkursSchema({ sifraKonkursa: req.params.sifraKonkursa }), new StavkaKonkursaSchema())];
             case 1:
-                konkurs = _a.sent();
+                result = _b.sent();
+                if (result.length === 0) {
+                    res.status(404).json({ success: false, message: 'Konkurs not found' });
+                    return [2];
+                }
+                _a = result[0], sifraKonkursa = _a.sifraKonkursa, skolskaGodina = _a.skolskaGodina, datumDo = _a.datumDo, datumOd = _a.datumOd, brojMesta = _a.brojMesta;
+                konkurs = {
+                    sifraKonkursa: sifraKonkursa,
+                    skolskaGodina: skolskaGodina,
+                    datumDo: datumDo,
+                    datumOd: datumOd,
+                    brojMesta: brojMesta,
+                };
+                konkurs.stavkeKonkursa = result.map(function (item) {
+                    var idStavke = item.idStavke, nazivUniverziteta = item.nazivUniverziteta;
+                    return {
+                        sifraKonkursa: sifraKonkursa,
+                        idStavke: idStavke,
+                        nazivUniverziteta: nazivUniverziteta,
+                    };
+                });
                 res.json(konkurs);
                 return [2];
         }
     });
 }); });
+export var deleteStavka = asyncHandler(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, idStavke, sifraKonkursa, dbRes, apiResponse;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _a = req.params, idStavke = _a.idStavke, sifraKonkursa = _a.sifraKonkursa;
+                return [4, DBBroker.getInstance().delete(new StavkaKonkursaSchema({ idStavke: parseInt(idStavke), sifraKonkursa: sifraKonkursa }))];
+            case 1:
+                dbRes = _b.sent();
+                apiResponse = {
+                    data: dbRes,
+                };
+                res.locals.apiResponse = apiResponse;
+                next();
+                return [2];
+        }
+    });
+}); });
+export var addStavka = asyncHandler(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, idStavke, sifraKonkursa, nazivUniverziteta, dbRes, apiResponse;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _a = req.body, idStavke = _a.idStavke, sifraKonkursa = _a.sifraKonkursa, nazivUniverziteta = _a.nazivUniverziteta;
+                return [4, DBBroker.getInstance().insert(new StavkaKonkursaSchema({ sifraKonkursa: sifraKonkursa, nazivUniverziteta: nazivUniverziteta }))];
+            case 1:
+                dbRes = _b.sent();
+                apiResponse = {
+                    data: dbRes,
+                };
+                res.locals.apiResponse = apiResponse;
+                next();
+                return [2];
+        }
+    });
+}); });
+var parseKonkurs = function (rows) {
+    var konkursiDistinct = new Map();
+    rows.forEach(function (item) {
+        var sifraKonkursa = item.sifraKonkursa, skolskaGodina = item.skolskaGodina, datumDo = item.datumDo, datumOd = item.datumOd, brojMesta = item.brojMesta, idStavke = item.idStavke, nazivUniverziteta = item.nazivUniverziteta;
+        var konkurs = {
+            sifraKonkursa: sifraKonkursa,
+            skolskaGodina: skolskaGodina,
+            datumDo: datumDo,
+            datumOd: datumOd,
+            brojMesta: brojMesta,
+            stavkeKonkursa: [],
+        };
+        if (!konkursiDistinct.has(sifraKonkursa)) {
+            konkursiDistinct.set(sifraKonkursa, konkurs);
+        }
+        else {
+            konkurs = konkursiDistinct.get(sifraKonkursa);
+        }
+        if (idStavke !== null)
+            konkurs.stavkeKonkursa.push({
+                sifraKonkursa: sifraKonkursa,
+                idStavke: idStavke,
+                nazivUniverziteta: nazivUniverziteta,
+            });
+    });
+    var arr = Array.from(konkursiDistinct.values());
+    return arr;
+};
 //# sourceMappingURL=konkurs.js.map

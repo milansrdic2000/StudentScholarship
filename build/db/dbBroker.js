@@ -94,42 +94,105 @@ export var DBBroker = (function () {
             });
         });
     };
-    DBBroker.prototype.select = function (entitySchema, criteria) {
+    DBBroker.prototype.getSelectQuery = function (entitySchema) {
+        var sql = '';
+        entitySchema.columns.forEach(function (item, index) {
+            if (item.getter) {
+                sql +=
+                    entitySchema.tableAlias + ".".concat(item.getter, " as \"").concat(String(item.name), "\" ");
+            }
+            else {
+                sql += " ".concat(entitySchema.tableAlias, ".").concat(String(item.name), " ");
+                if (item.alias) {
+                    sql += " as \"".concat(item.alias, "\" ");
+                }
+            }
+            if (index < entitySchema.columns.length - 1) {
+                sql += ' , ';
+            }
+        });
+        return sql;
+    };
+    DBBroker.prototype.getWhereQuery = function (entitySchema) {
+        var sql = '';
+        var criteria = entitySchema.filter;
+        sql += ' WHERE ';
+        Object.keys(criteria).forEach(function (key, index) {
+            sql += "".concat(entitySchema.tableAlias, ".").concat(key, " = ").concat(criteria[key], " ");
+            if (index < Object.keys(criteria).length - 1) {
+                sql += ' AND ';
+            }
+        });
+        return sql;
+    };
+    DBBroker.prototype.select = function (entitySchema) {
+        var joinSchema = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            joinSchema[_i - 1] = arguments[_i];
+        }
         return __awaiter(this, void 0, void 0, function () {
             var sql, response;
+            var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         sql = 'SELECT ';
-                        entitySchema.columns.forEach(function (item, index) {
-                            if (item.getter) {
-                                sql +=
-                                    entitySchema.tableAlias + ".".concat(item.getter, " as \"").concat(String(item.name), "\" ");
-                            }
-                            else {
-                                sql += " ".concat(String(item.name), " ");
-                                if (item.alias) {
-                                    sql += " as \"".concat(item.alias, "\" ");
-                                }
-                            }
-                            if (index < entitySchema.columns.length - 1) {
-                                sql += ' , ';
-                            }
+                        sql += this.getSelectQuery(entitySchema);
+                        joinSchema.forEach(function (schema) {
+                            sql += ', ' + _this.getSelectQuery(schema);
                         });
                         sql += " FROM ".concat(entitySchema.tableName, " ").concat(entitySchema.tableAlias);
-                        if (criteria) {
-                            sql += ' WHERE ';
-                            Object.keys(criteria).forEach(function (key, index) {
-                                sql += "".concat(entitySchema.tableAlias, ".").concat(key, " = ").concat(criteria[key], " ");
-                                if (index < Object.keys(criteria).length - 1) {
-                                    sql += ' AND ';
-                                }
+                        if ((joinSchema === null || joinSchema === void 0 ? void 0 : joinSchema.length) > 0) {
+                            joinSchema.forEach(function (schema) {
+                                sql += " ".concat(schema.joinType, " JOIN ").concat(schema.tableName, " ").concat(schema.tableAlias, " ON ").concat(entitySchema.tableAlias, ".").concat(entitySchema.joinKey, " = ").concat(schema.tableAlias, ".").concat(schema.joinKey, " ");
                             });
+                        }
+                        if (entitySchema.filter) {
+                            sql += this.getWhereQuery(entitySchema);
                         }
                         return [4, this.executeQuery(sql)];
                     case 1:
                         response = _a.sent();
                         return [2, response.rows];
+                }
+            });
+        });
+    };
+    DBBroker.prototype.delete = function (entitySchema) {
+        return __awaiter(this, void 0, void 0, function () {
+            var command, response;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        command = "DELETE FROM ".concat(entitySchema.tableName, " ").concat(entitySchema.tableAlias, " ");
+                        if (!entitySchema.filter)
+                            throw new Error('No filter specified');
+                        command += this.getWhereQuery(entitySchema);
+                        return [4, this.executeQuery(command)];
+                    case 1:
+                        response = _a.sent();
+                        return [4, this.connection.commit()];
+                    case 2:
+                        _a.sent();
+                        return [2, response];
+                }
+            });
+        });
+    };
+    DBBroker.prototype.insert = function (entitySchema) {
+        return __awaiter(this, void 0, void 0, function () {
+            var command, response;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        command = "INSERT INTO ".concat(entitySchema.tableName, " ").concat(entitySchema.insertQuery);
+                        return [4, this.executeQuery(command)];
+                    case 1:
+                        response = _a.sent();
+                        return [4, this.connection.commit()];
+                    case 2:
+                        _a.sent();
+                        return [2, response];
                 }
             });
         });

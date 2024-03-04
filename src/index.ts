@@ -9,12 +9,13 @@ import cors from 'cors'
 
 import { konkursRouter } from './routers/konkurs.js'
 import { oracleErrorHandler } from './errors/oracle-error-handler.js'
+import { responseWrapper } from './middleware/response-wrapper.js'
 const { NotFound } = httpErrors
 const app: Express = express()
 
 app.use(cors())
 app.use(express.json())
-app.use('/konkurs', konkursRouter)
+app.use('/konkursi', konkursRouter, responseWrapper)
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello World!')
 })

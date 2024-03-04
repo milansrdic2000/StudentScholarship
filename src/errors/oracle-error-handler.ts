@@ -6,11 +6,12 @@ export class OracleError extends Error {
     super(message)
     this.code = code
     this.name = 'OracleError'
+    // check why this is important
     Object.setPrototypeOf(this, OracleError.prototype)
   }
 }
-export function oracleErrorHandler(err: Error, req, res, next) {
-  if (err.code.startsWith('ORA-')) {
+export function oracleErrorHandler(err: any, req, res, next) {
+  if (err.code?.startsWith('ORA-')) {
     const oracleError = new OracleError(err.code, err.message)
     next(oracleError)
   } else {

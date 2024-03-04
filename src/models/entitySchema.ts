@@ -1,9 +1,15 @@
 export interface EntitySchema<T> {
   tableName: string
   tableAlias?: string
-  primaryKey: string
+  primaryKey: string | string[]
+
   columns: ColumnSchema<T>[]
-  data?: T
+  filter?: Partial<T>
+
+  insertQuery?: string
+
+  joinKey?: string | string[]
+  joinType?: string
 }
 
 export interface ColumnSchema<T> {

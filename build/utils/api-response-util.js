@@ -34,68 +34,31 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import { DBBroker } from './db/dbBroker.js';
-import express from 'express';
-import { errorHandler } from './errors/error-handler.js';
-import { notFoundMiddleware } from './middleware/not-found-middleware.js';
-import asyncHandler from 'express-async-handler';
-import httpErrors from 'http-errors';
-import cors from 'cors';
-import { konkursRouter } from './routers/konkurs.js';
-import { oracleErrorHandler } from './errors/oracle-error-handler.js';
-import { responseWrapper } from './middleware/response-wrapper.js';
-var NotFound = httpErrors.NotFound;
-var app = express();
-app.use(cors());
-app.use(express.json());
-app.use('/konkursi', konkursRouter, responseWrapper);
-app.get('/', function (req, res) {
-    res.send('Hello World!');
-});
-app.get('/home', asyncHandler(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
-    return __generator(this, function (_a) {
-        res.json({ message: 'Hello from home' });
-        return [2];
-    });
-}); }));
-app.use(notFoundMiddleware);
-app.use(oracleErrorHandler);
-app.use(errorHandler);
-function start() {
+export var setApiResponse = function (res, data, success, code) {
+    if (success === void 0) { success = true; }
+    if (code === void 0) { code = 200; }
     return __awaiter(this, void 0, void 0, function () {
-        var result;
+        var apiRes;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4, DBBroker.getInstance().openConnection()];
+                case 0:
+                    apiRes = {
+                        data: data,
+                        success: success,
+                        code: code,
+                    };
+                    res.locals.apiResponse = apiRes;
+                    return [4, simulateWait()];
                 case 1:
                     _a.sent();
-                    return [4, DBBroker.getInstance().executeQuery('SELECT k.sifrakonkursa as dadarin, k.skolskagodina "Skolska godina", k.konkursinfo.get_datum_do() as dadarinski FROM konkurs k')];
-                case 2:
-                    result = _a.sent();
-                    console.log('delikventsid');
                     return [2];
             }
         });
     });
-}
-app.listen(5000, function () { return __awaiter(void 0, void 0, void 0, function () {
-    var err_1;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                _a.trys.push([0, 2, , 3]);
-                return [4, start()];
-            case 1:
-                _a.sent();
-                console.log('Server is running on port 5000');
-                return [3, 3];
-            case 2:
-                err_1 = _a.sent();
-                console.log('Error with starting server:');
-                console.error(err_1);
-                return [3, 3];
-            case 3: return [2];
-        }
+};
+var simulateWait = function () {
+    return new Promise(function (resolve, reject) {
+        setTimeout(function () { return resolve(true); }, 2000);
     });
-}); });
-//# sourceMappingURL=index.js.map
+};
+//# sourceMappingURL=api-response-util.js.map

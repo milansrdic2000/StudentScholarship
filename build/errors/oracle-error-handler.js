@@ -26,7 +26,8 @@ var OracleError = (function (_super) {
 }(Error));
 export { OracleError };
 export function oracleErrorHandler(err, req, res, next) {
-    if (err.code.startsWith('ORA-')) {
+    var _a;
+    if ((_a = err.code) === null || _a === void 0 ? void 0 : _a.startsWith('ORA-')) {
         var oracleError = new OracleError(err.code, err.message);
         next(oracleError);
     }

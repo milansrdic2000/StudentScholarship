@@ -1,5 +1,5 @@
 import oracledb, { Connection } from 'oracledb'
-import { EntitySchema } from '../models/entitySchema.js'
+import { ColumnSchema, EntitySchema } from '../models/entitySchema.js'
 
 export const hello = 'hi mom!'
 export class DBBroker {
@@ -38,17 +38,14 @@ export class DBBroker {
       return err
     }
   }
-  public async select<schema extends EntitySchema<any>, model>(
-    entitySchema: schema,
-    criteria?: Partial<model>
-  ): Promise<model[]> {
-    let sql = 'SELECT '
+  private getSelectQuery(entitySchema: EntitySchema<any>): string {
+    let sql = ''
     entitySchema.columns.forEach((item, index) => {
       if (item.getter) {
         sql +=
           entitySchema.tableAlias + `.${item.getter} as "${String(item.name)}" `
       } else {
-        sql += ` ${String(item.name)} `
+        sql += ` ${entitySchema.tableAlias}.${String(item.name)} `
         if (item.alias) {
           sql += ` as "${item.alias}" `
         }
@@ -57,19 +54,60 @@ export class DBBroker {
         sql += ' , '
       }
     })
+    return sql
+  }
+  private getWhereQuery(entitySchema: EntitySchema<any>): string {
+    let sql = ''
+    const criteria = entitySchema.filter
+    sql += ' WHERE '
+    Object.keys(criteria).forEach((key, index) => {
+      sql += `${entitySchema.tableAlias}.${key} = ${criteria[key]} `
+      if (index < Object.keys(criteria).length - 1) {
+        sql += ' AND '
+      }
+    })
+    return sql
+  }
+  public async select<model>(
+    entitySchema: EntitySchema<any>,
+    ...joinSchema: EntitySchema<any>[]
+  ): Promise<model[]> {
+    let sql = 'SELECT '
+    sql += this.getSelectQuery(entitySchema)
+    joinSchema.forEach((schema) => {
+      sql += ', ' + this.getSelectQuery(schema)
+    })
     sql += ` FROM ${entitySchema.tableName} ${entitySchema.tableAlias}`
-    if (criteria) {
-      sql += ' WHERE '
-      Object.keys(criteria).forEach((key, index) => {
-        sql += `${entitySchema.tableAlias}.${key} = ${criteria[key]} `
-        if (index < Object.keys(criteria).length - 1) {
-          sql += ' AND '
-        }
+
+    // JOINS
+    if (joinSchema?.length > 0) {
+      joinSchema.forEach((schema) => {
+        sql += ` ${schema.joinType} JOIN ${schema.tableName} ${schema.tableAlias} ON ${entitySchema.tableAlias}.${entitySchema.joinKey} = ${schema.tableAlias}.${schema.joinKey} `
       })
+    }
+
+    if (entitySchema.filter) {
+      sql += this.getWhereQuery(entitySchema)
     }
 
     const response = await this.executeQuery(sql)
     return response.rows
+  }
+  public async delete<model>(entitySchema: EntitySchema<model>): Promise<any> {
+    let command = `DELETE FROM ${entitySchema.tableName} ${entitySchema.tableAlias} `
+    if (!entitySchema.filter) throw new Error('No filter specified')
+
+    command += this.getWhereQuery(entitySchema)
+    const response = await this.executeQuery(command)
+    await this.connection.commit()
+    return response
+  }
+  public async insert<model>(entitySchema: EntitySchema<model>): Promise<any> {
+    let command = `INSERT INTO ${entitySchema.tableName} ${entitySchema.insertQuery}`
+
+    const response = await this.executeQuery(command)
+    await this.connection.commit()
+    return response
   }
   public executeQuery(sql: string, binds: any[] = []): Promise<any> {
     return this.connection.execute(sql, binds)

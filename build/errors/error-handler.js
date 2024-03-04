@@ -5,6 +5,7 @@ export function errorHandler(err, req, res, next) {
         success: false,
         message: err.message,
     };
+    console.log('usao u error handle');
     if (err instanceof HttpError) {
         res.status(err.statusCode || 500).send(response);
     }
