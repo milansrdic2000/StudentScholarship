@@ -8,14 +8,16 @@ import httpErrors from 'http-errors'
 import cors from 'cors'
 
 import { konkursRouter } from './routers/konkurs.js'
+import { studentRouter } from './routers/studenti.js'
 import { oracleErrorHandler } from './errors/oracle-error-handler.js'
-import { responseWrapper } from './middleware/response-wrapper.js'
+
 const { NotFound } = httpErrors
 const app: Express = express()
 
 app.use(cors())
 app.use(express.json())
-app.use('/konkursi', konkursRouter, responseWrapper)
+app.use('/konkursi', konkursRouter)
+app.use('/studenti', studentRouter)
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello World!')
 })
@@ -32,14 +34,6 @@ app.use(errorHandler)
 
 async function start() {
   await DBBroker.getInstance().openConnection()
-  const result = await DBBroker.getInstance().executeQuery(
-    'SELECT k.sifrakonkursa as dadarin, k.skolskagodina "Skolska godina", k.konkursinfo.get_datum_do() as dadarinski FROM konkurs k'
-  )
-
-  //  konkursinfo.get_datum_do() "Datum zatvaranja", konkursinfo.get_broj_mesta() "Broj mesta"
-
-  //console.log(result.rows)
-
   console.log('delikventsid')
 }
 

@@ -34,27 +34,35 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-export var setApiResponse = function (res, data, success, code) {
+export var buildApiResponse = function (data, success, code) {
     if (success === void 0) { success = true; }
     if (code === void 0) { code = 200; }
-    return __awaiter(this, void 0, void 0, function () {
-        var apiRes;
+    return { data: data, success: success, code: code };
+};
+export var responseWrapper = function (fn) {
+    return function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+        var result, data, code, success, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    apiRes = {
-                        data: data,
-                        success: success,
-                        code: code,
-                    };
-                    res.locals.apiResponse = apiRes;
-                    return [4, simulateWait()];
+                    _a.trys.push([0, 2, , 3]);
+                    return [4, fn(req, res, next)];
                 case 1:
-                    _a.sent();
-                    return [2];
+                    result = _a.sent();
+                    data = result.data, code = result.code, success = result.success;
+                    if (code === 404) {
+                        return [2, res.status(code).json({ success: false, message: data })];
+                    }
+                    res.status(code || 200).json({ success: success !== null && success !== void 0 ? success : true, data: data });
+                    return [3, 3];
+                case 2:
+                    err_1 = _a.sent();
+                    next(err_1);
+                    return [3, 3];
+                case 3: return [2];
             }
         });
-    });
+    }); };
 };
 var simulateWait = function () {
     return new Promise(function (resolve, reject) {

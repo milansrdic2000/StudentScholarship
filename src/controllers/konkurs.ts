@@ -7,75 +7,89 @@ import {
   StavkaKonkursaSchema,
 } from '../models/stavkaKonkursa.js'
 import { ApiResponse } from '../utils/apiResponse.js'
-import { setApiResponse } from '../utils/api-response-util.js'
-
-export const getKonkursi = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const stavkaSchema = new StavkaKonkursaSchema()
-    stavkaSchema.joinType = 'LEFT'
-    const konkursi = await DBBroker.getInstance().select<
-      Konkurs & StavkaKonkursa
-    >(new KonkursSchema(), stavkaSchema)
-    await setApiResponse(res, parseKonkurs(konkursi))
-    next()
-  }
-)
-
-export const getKonkurs = asyncHandler(async (req: Request, res: Response) => {
+import {
+  buildApiResponse,
+  responseWrapper,
+} from '../utils/api-response-util.js'
+import { format, parse } from 'date-fns'
+import { formatDate, parseDate } from '../utils/date-helper.js'
+export const getKonkursi = responseWrapper(async (req, res, next) => {
+  const konkursi = await DBBroker.getInstance().select<
+    Konkurs & StavkaKonkursa
+  >(new KonkursSchema(), new StavkaKonkursaSchema())
+  return buildApiResponse(parseKonkurs(konkursi))
+})
+export const getKonkurs = responseWrapper(async (req, res, next) => {
   const result = await DBBroker.getInstance().select<Konkurs & StavkaKonkursa>(
-    new KonkursSchema({ sifraKonkursa: req.params.sifraKonkursa }),
+    new KonkursSchema(null, { sifraKonkursa: req.params.sifraKonkursa }),
     new StavkaKonkursaSchema()
   )
   if (result.length === 0) {
-    res.status(404).json({ success: false, message: 'Konkurs not found' })
-    return
+    return buildApiResponse('Konkurs ne postoji', false, 404)
   }
-  const { sifraKonkursa, skolskaGodina, datumDo, datumOd, brojMesta } =
-    result[0]
-
-  const konkurs: Konkurs = {
-    sifraKonkursa,
-    skolskaGodina,
-    datumDo,
-    datumOd,
-    brojMesta,
-  }
-  konkurs.stavkeKonkursa = result.map((item) => {
-    const { idStavke, nazivUniverziteta } = item
-    return {
-      sifraKonkursa,
-      idStavke,
-      nazivUniverziteta,
-    }
-  })
-
-  res.json(konkurs)
+  return buildApiResponse(parseKonkurs(result))
 })
+export const deleteKonkurs = responseWrapper(async (req, res, next) => {
+  const { sifraKonkursa } = req.params
+  const dbRes = await DBBroker.getInstance().delete<Konkurs>(
+    new KonkursSchema(null, { sifraKonkursa })
+  )
+  return buildApiResponse(dbRes)
+})
+export const addKonkurs = responseWrapper(async (req, res, next) => {
+  const { sifraKonkursa, skolskaGodina, datumOd, datumDo, brojMesta } = req.body
+  const dbRes = await DBBroker.getInstance().insert<Konkurs>(
+    new KonkursSchema({
+      sifraKonkursa,
+      skolskaGodina: '2021/2022',
+      datumOd: new Date(),
+      datumDo: new Date(),
+      brojMesta: 456,
+    })
+  )
+  return buildApiResponse(dbRes)
+})
+export const updateKonkurs = responseWrapper(async (req, res, next) => {
+  let { sifraKonkursa, skolskaGodina, datumOd, datumDo, brojMesta } = req.body
+  datumOd = new Date(datumOd)
+  datumDo = new Date(datumDo)
 
-export const deleteStavka = asyncHandler(
+  const dbRes = await DBBroker.getInstance().update<Konkurs>(
+    new KonkursSchema(
+      {
+        sifraKonkursa,
+        skolskaGodina,
+        datumOd,
+        datumDo,
+        brojMesta,
+      },
+      { sifraKonkursa }
+    )
+  )
+  return buildApiResponse(dbRes)
+})
+export const deleteStavka = responseWrapper(
   async (req: Request, res: Response, next: NextFunction) => {
     const { idStavke, sifraKonkursa } = req.params
     const dbRes = await DBBroker.getInstance().delete<StavkaKonkursa>(
-      new StavkaKonkursaSchema({ idStavke: parseInt(idStavke), sifraKonkursa })
+      new StavkaKonkursaSchema(null, {
+        idStavke: parseInt(idStavke),
+        sifraKonkursa,
+      })
     )
-    const apiResponse: ApiResponse = {
-      data: dbRes,
-    }
-    res.locals.apiResponse = apiResponse
-    next()
+    return buildApiResponse(dbRes)
   }
 )
-export const addStavka = asyncHandler(
+export const addStavka = responseWrapper(
   async (req: Request, res: Response, next: NextFunction) => {
     const { idStavke, sifraKonkursa, nazivUniverziteta } = req.body
     const dbRes = await DBBroker.getInstance().insert<StavkaKonkursa>(
       new StavkaKonkursaSchema({ sifraKonkursa, nazivUniverziteta })
     )
-    const apiResponse: ApiResponse = {
-      data: dbRes,
+    if (dbRes.rowsAffected > 0 && dbRes.outBinds) {
+      return buildApiResponse({ idStavke: dbRes.outBinds.id[0] })
     }
-    res.locals.apiResponse = apiResponse
-    next()
+    return buildApiResponse(dbRes)
   }
 )
 const parseKonkurs = (rows: (Konkurs & StavkaKonkursa)[]): any => {
@@ -99,6 +113,7 @@ const parseKonkurs = (rows: (Konkurs & StavkaKonkursa)[]): any => {
       brojMesta,
       stavkeKonkursa: [],
     }
+
     if (!konkursiDistinct.has(sifraKonkursa)) {
       konkursiDistinct.set(sifraKonkursa, konkurs)
     } else {

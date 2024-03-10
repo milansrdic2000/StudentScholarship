@@ -118,37 +118,63 @@ export var DBBroker = (function () {
         var criteria = entitySchema.filter;
         sql += ' WHERE ';
         Object.keys(criteria).forEach(function (key, index) {
-            sql += "".concat(entitySchema.tableAlias, ".").concat(key, " = ").concat(criteria[key], " ");
+            sql += "".concat(entitySchema.tableAlias, ".").concat(key, " = ");
+            if (typeof criteria[key] === 'string') {
+                sql += "'".concat(criteria[key], "'");
+            }
+            else {
+                sql += criteria[key];
+            }
             if (index < Object.keys(criteria).length - 1) {
                 sql += ' AND ';
             }
         });
         return sql;
     };
-    DBBroker.prototype.select = function (entitySchema) {
+    DBBroker.prototype.select = function (mainSchema) {
         var joinSchema = [];
         for (var _i = 1; _i < arguments.length; _i++) {
             joinSchema[_i - 1] = arguments[_i];
         }
         return __awaiter(this, void 0, void 0, function () {
-            var sql, response;
+            var sql, joinMetas, response;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         sql = 'SELECT ';
-                        sql += this.getSelectQuery(entitySchema);
+                        sql += this.getSelectQuery(mainSchema);
                         joinSchema.forEach(function (schema) {
                             sql += ', ' + _this.getSelectQuery(schema);
                         });
-                        sql += " FROM ".concat(entitySchema.tableName, " ").concat(entitySchema.tableAlias);
+                        sql += " FROM ".concat(mainSchema.tableName, " ").concat(mainSchema.tableAlias);
                         if ((joinSchema === null || joinSchema === void 0 ? void 0 : joinSchema.length) > 0) {
-                            joinSchema.forEach(function (schema) {
-                                sql += " ".concat(schema.joinType, " JOIN ").concat(schema.tableName, " ").concat(schema.tableAlias, " ON ").concat(entitySchema.tableAlias, ".").concat(entitySchema.joinKey, " = ").concat(schema.tableAlias, ".").concat(schema.joinKey, " ");
+                            joinMetas = mainSchema.joinMeta;
+                            joinSchema.forEach(function (schema, index) {
+                                var joinMetaMain = mainSchema.joinMeta[index];
+                                sql += " ".concat(joinMetaMain.joinType, " JOIN ").concat(schema.tableName, " ").concat(schema.tableAlias, " ON ");
+                                joinMetaMain.joinKeys.forEach(function (key, j) {
+                                    sql += "".concat(mainSchema.tableAlias, ".").concat(joinMetaMain.joinKeys[j], " = ").concat(schema.tableAlias, ".").concat(schema.joinKey[j], " ");
+                                    if (j < joinMetaMain.joinKeys.length - 1)
+                                        sql += ' AND ';
+                                });
+                                var joinMeta = schema.joinMeta;
+                                if ((joinMeta === null || joinMeta === void 0 ? void 0 : joinMeta.length) > 0) {
+                                    joinMeta.forEach(function (subJoin, index) {
+                                        if (subJoin.subJoin) {
+                                            sql += " ".concat(subJoin.joinType, " JOIN ").concat(subJoin.subJoin.tableName, " ").concat(subJoin.subJoin.tableAlias, " ON ");
+                                            subJoin.joinKeys.forEach(function (key, j) {
+                                                sql += "".concat(schema.tableAlias, ".").concat(subJoin.joinKeys[j], " = ").concat(subJoin.subJoin.tableAlias, ".").concat(subJoin.subJoin.joinKey[j], " ");
+                                                if (j < subJoin.joinKeys.length - 1)
+                                                    sql += ' AND ';
+                                            });
+                                        }
+                                    });
+                                }
                             });
                         }
-                        if (entitySchema.filter) {
-                            sql += this.getWhereQuery(entitySchema);
+                        if (mainSchema.filter) {
+                            sql += this.getWhereQuery(mainSchema);
                         }
                         return [4, this.executeQuery(sql)];
                     case 1:
@@ -181,11 +207,36 @@ export var DBBroker = (function () {
     };
     DBBroker.prototype.insert = function (entitySchema) {
         return __awaiter(this, void 0, void 0, function () {
-            var command, response;
+            var command, output, result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        command = "INSERT INTO ".concat(entitySchema.tableName, " ").concat(entitySchema.insertQuery);
+                        command = "INSERT INTO ".concat(entitySchema.tableName, " ").concat(entitySchema.insertQuery, " ");
+                        output = {};
+                        if (entitySchema.autoIncrement) {
+                            command += "RETURNING ".concat(entitySchema.autoIncrement, " INTO :id ");
+                            output = { id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER } };
+                        }
+                        return [4, DBBroker._instance.connection.execute(command, output)];
+                    case 1:
+                        result = _a.sent();
+                        return [4, this.connection.commit()];
+                    case 2:
+                        _a.sent();
+                        return [2, result];
+                }
+            });
+        });
+    };
+    DBBroker.prototype.update = function (entitySchema) {
+        return __awaiter(this, void 0, void 0, function () {
+            var command, string, response;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        command = "UPDATE ".concat(entitySchema.tableName, " ").concat(entitySchema.tableAlias, " ").concat(entitySchema.updateQuery);
+                        string = '12345';
+                        command += this.getWhereQuery(entitySchema);
                         return [4, this.executeQuery(command)];
                     case 1:
                         response = _a.sent();

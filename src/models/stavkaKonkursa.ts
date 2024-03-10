@@ -8,17 +8,21 @@ export interface StavkaKonkursa {
 
 export class StavkaKonkursaSchema implements EntitySchema<StavkaKonkursa> {
   primaryKey: string | string[]
+  autoIncrement?: string
   tableName: string
   tableAlias: string
   columns: ColumnSchema<StavkaKonkursa>[]
-  filter?: Partial<StavkaKonkursa>
 
   joinKey?: string | string[]
   joinType?: string = ''
 
   insertQuery?: string
-  constructor(filter: Partial<StavkaKonkursa> = null) {
+  constructor(
+    public payload: Partial<StavkaKonkursa> = null,
+    public filter: Partial<StavkaKonkursa> = null
+  ) {
     this.primaryKey = ['sifraKonkursa', 'idStavke']
+    this.autoIncrement = 'idStavke'
     this.tableName = 'stavka_konkursa'
     this.tableAlias = 'sk'
     this.columns = [
@@ -29,9 +33,10 @@ export class StavkaKonkursaSchema implements EntitySchema<StavkaKonkursa> {
       },
       { name: 'nazivUniverziteta', alias: 'nazivUniverziteta' },
     ]
-    this.joinKey = 'sifraKonkursa'
+    this.joinKey = ['sifraKonkursa']
     this.filter = filter
+    this.payload = payload
 
-    this.insertQuery = ` (sifraKonkursa, nazivUniverziteta) VALUES(${this.filter?.sifraKonkursa},${this.filter?.nazivUniverziteta})`
+    this.insertQuery = ` (sifraKonkursa, nazivUniverziteta) VALUES('${this.payload?.sifraKonkursa}','${this.payload?.nazivUniverziteta}')`
   }
 }
