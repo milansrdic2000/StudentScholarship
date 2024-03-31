@@ -40,17 +40,127 @@ import { SmerSchema } from '../models/smer.js';
 import { StudentSchema } from '../models/student.js';
 import { buildApiResponse, responseWrapper, } from '../utils/api-response-util.js';
 export var getStudenti = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
-    var opstina, smer, studenti;
+    var opstina, smer, schema, studenti;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 opstina = new OpstinaSchema();
                 smer = new SmerSchema();
-                return [4, DBBroker.getInstance().select(new StudentSchema(), new OpstinaSchema(), new SmerSchema())];
+                schema = new StudentSchema(null, null);
+                schema.tableName = 'student_osnovno';
+                schema.columns = schema.minimalColumns;
+                schema.joinMeta = [
+                    {
+                        joinKeys: ['sifraFakulteta', 'idSmera'],
+                        joinType: 'LEFT',
+                        subJoin: new SmerSchema(),
+                    },
+                ];
+                return [4, DBBroker.getInstance().select(schema)];
             case 1:
                 studenti = _a.sent();
-                return [2, buildApiResponse(studenti)];
+                return [2, buildApiResponse(parseStudent(studenti))];
         }
     });
 }); });
+export var getStudent = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var jmbg, student;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                jmbg = req.params.jmbg;
+                return [4, DBBroker.getInstance().select(new StudentSchema(null, { jmbg: parseInt(jmbg) }))];
+            case 1:
+                student = _a.sent();
+                if (!student || student.length === 0)
+                    return [2, buildApiResponse(null, false, 404)];
+                return [2, buildApiResponse(parseStudent(student)[0])];
+        }
+    });
+}); });
+export var patchStudent = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var jmbg, student, _a, idSmera, sifraFakulteta, _b, idMesta, postanskiBroj, vojniRokDo, vojniRokOd, studentSchema, updated;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                jmbg = req.params.jmbg;
+                student = req.body;
+                _a = student.smer, idSmera = _a.idSmera, sifraFakulteta = _a.sifraFakulteta, _b = student.opstina, idMesta = _b.idMesta, postanskiBroj = _b.postanskiBroj, vojniRokDo = student.vojniRokDo, vojniRokOd = student.vojniRokOd;
+                student.idSmera = idSmera;
+                student.sifraFakulteta = sifraFakulteta;
+                student.idMesta = idMesta;
+                student.postanskiBroj = postanskiBroj;
+                student.vojniRokDo = vojniRokDo ? new Date(vojniRokDo) : null;
+                student.vojniRokOd = vojniRokOd ? new Date(vojniRokOd) : null;
+                studentSchema = new StudentSchema(student, { jmbg: parseInt(jmbg) });
+                studentSchema.tableName = 'student_pogled';
+                return [4, DBBroker.getInstance().patch(studentSchema)];
+            case 1:
+                updated = _c.sent();
+                return [2, buildApiResponse(updated)];
+        }
+    });
+}); });
+export var addStudent = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var student, _a, idSmera, sifraFakulteta, _b, idMesta, postanskiBroj, vojniRokDo, vojniRokOd, studentSchema, inserted;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                student = req.body;
+                _a = student.smer, idSmera = _a.idSmera, sifraFakulteta = _a.sifraFakulteta, _b = student.opstina, idMesta = _b.idMesta, postanskiBroj = _b.postanskiBroj, vojniRokDo = student.vojniRokDo, vojniRokOd = student.vojniRokOd;
+                student.idSmera = idSmera;
+                student.sifraFakulteta = sifraFakulteta;
+                student.idMesta = idMesta;
+                student.postanskiBroj = postanskiBroj;
+                student.vojniRokDo = vojniRokDo ? new Date(vojniRokDo) : null;
+                student.vojniRokOd = vojniRokOd ? new Date(vojniRokOd) : null;
+                studentSchema = new StudentSchema(student);
+                studentSchema.tableName = 'student_pogled';
+                return [4, DBBroker.getInstance().insert(studentSchema)];
+            case 1:
+                inserted = _c.sent();
+                return [2, buildApiResponse(inserted)];
+        }
+    });
+}); });
+var parseStudent = function (responseRows) {
+    var studentiParsed = [];
+    responseRows.forEach(function (row) {
+        var adresa = row.adresa, jmbg = row.jmbg, imePrezime = row.imePrezime, vojniRokOd = row.vojniRokOd, vojniRokDo = row.vojniRokDo, idMesta = row.idMesta, postanskiBroj = row.postanskiBroj, nazivMesta = row.nazivMesta, nazivOpstine = row.nazivOpstine, nazivSmera = row.nazivSmera, nazivFakulteta = row.nazivFakulteta, idSmera = row.idSmera, sifraFakulteta = row.sifraFakulteta, idMestaFakultet = row.idMestaFakultet, trajanjeNastave = row.trajanjeNastave, registarskiBroj = row.registarskiBroj;
+        var mesto = {
+            idMesta: idMesta,
+            nazivMesta: nazivMesta,
+        };
+        var opstina = {
+            idMesta: idMesta,
+            nazivOpstine: nazivOpstine,
+            nazivMesta: nazivMesta,
+            postanskiBroj: postanskiBroj,
+        };
+        var fakultet = {
+            idMestaFakultet: idMestaFakultet,
+            nazivFakulteta: nazivFakulteta,
+            sifraFakulteta: sifraFakulteta,
+        };
+        var smer = {
+            idSmera: idSmera,
+            nazivSmera: nazivSmera,
+            trajanjeNastave: trajanjeNastave,
+            sifraFakulteta: sifraFakulteta,
+            fakultet: fakultet,
+        };
+        var s = {
+            adresa: adresa,
+            jmbg: jmbg,
+            imePrezime: imePrezime,
+            vojniRokOd: vojniRokOd,
+            vojniRokDo: vojniRokDo,
+            opstina: opstina,
+            smer: smer,
+            registarskiBroj: registarskiBroj,
+        };
+        studentiParsed.push(s);
+    });
+    return studentiParsed;
+};
 //# sourceMappingURL=student.js.map

@@ -13,7 +13,7 @@ export class StavkaKonkursaSchema implements EntitySchema<StavkaKonkursa> {
   tableAlias: string
   columns: ColumnSchema<StavkaKonkursa>[]
 
-  joinKey?: string | string[]
+  joinKey?: string[]
   joinType?: string = ''
 
   insertQuery?: string

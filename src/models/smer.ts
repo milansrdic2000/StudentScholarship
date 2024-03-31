@@ -1,10 +1,13 @@
-import { ColumnSchema, EntitySchema } from './entitySchema.js'
+import { ColumnSchema, EntitySchema, JoinMeta } from './entitySchema.js'
+import { Fakultet, FakultetSchema } from './fakultet.js'
 
 export interface Smer {
   idSmera: number
   nazivSmera: string
   trajanjeNastave: number
   sifraFakulteta: string
+
+  fakultet?: Fakultet
 }
 
 export class SmerSchema implements EntitySchema<Smer> {
@@ -16,8 +19,9 @@ export class SmerSchema implements EntitySchema<Smer> {
 
   insertQuery?: string
   updateQuery?: string
-  joinKey?: string | string[]
+  joinKey?: string[]
   joinType?: string
+  joinMeta?: JoinMeta[]
 
   constructor(
     public payload: Partial<Smer> = null,
@@ -37,6 +41,16 @@ export class SmerSchema implements EntitySchema<Smer> {
 
     this.joinKey = ['sifraFakulteta', 'idSmera']
     this.joinType = 'INNER'
+
+    const fakultet = new FakultetSchema()
+    fakultet.joinKey = ['sifraFakulteta']
+    this.joinMeta = [
+      {
+        joinKeys: ['sifraFakulteta'],
+        joinType: 'LEFT',
+        subJoin: fakultet,
+      },
+    ]
 
     this.insertQuery = ` VALUES(${this.payload?.idSmera},'${this.payload?.nazivSmera}',${this.payload?.trajanjeNastave})`
 

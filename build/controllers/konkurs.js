@@ -42,7 +42,7 @@ export var getKonkursi = responseWrapper(function (req, res, next) { return __aw
     var konkursi;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4, DBBroker.getInstance().select(new KonkursSchema(), new StavkaKonkursaSchema())];
+            case 0: return [4, DBBroker.getInstance().select(new KonkursSchema())];
             case 1:
                 konkursi = _a.sent();
                 return [2, buildApiResponse(parseKonkurs(konkursi))];
@@ -53,7 +53,7 @@ export var getKonkurs = responseWrapper(function (req, res, next) { return __awa
     var result;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4, DBBroker.getInstance().select(new KonkursSchema(null, { sifraKonkursa: req.params.sifraKonkursa }), new StavkaKonkursaSchema())];
+            case 0: return [4, DBBroker.getInstance().select(new KonkursSchema(null, { sifraKonkursa: req.params.sifraKonkursa }))];
             case 1:
                 result = _a.sent();
                 if (result.length === 0) {

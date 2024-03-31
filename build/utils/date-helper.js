@@ -6,7 +6,7 @@ export function formatDate(date) {
 }
 export function parseDate(date) {
     if (!date)
-        return '';
+        return null;
     return parse(date, 'dd-MMM-yyyy', new Date());
 }
 //# sourceMappingURL=date-helper.js.map

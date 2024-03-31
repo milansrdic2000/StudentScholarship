@@ -8,12 +8,15 @@ var MestoSchema = (function () {
         this.primaryKey = 'idMesta';
         this.tableName = 'mesto';
         this.tableAlias = 'm';
-        this.columns = [{ name: 'idMesta', primaryKey: true }, { name: 'naziv' }];
+        this.columns = [
+            { name: 'idMesta', primaryKey: true },
+            { name: 'nazivMesta' },
+        ];
         this.filter = filter;
         this.payload = payload;
         this.joinKey = ['idMesta'];
-        this.insertQuery = " VALUES(".concat((_a = this.payload) === null || _a === void 0 ? void 0 : _a.idMesta, ",'").concat((_b = this.payload) === null || _b === void 0 ? void 0 : _b.naziv, "')");
-        this.updateQuery = " SET naziv='".concat((_c = this.payload) === null || _c === void 0 ? void 0 : _c.naziv, "'");
+        this.insertQuery = " VALUES(".concat((_a = this.payload) === null || _a === void 0 ? void 0 : _a.idMesta, ",'").concat((_b = this.payload) === null || _b === void 0 ? void 0 : _b.nazivMesta, "')");
+        this.updateQuery = " SET naziv='".concat((_c = this.payload) === null || _c === void 0 ? void 0 : _c.nazivMesta, "'");
     }
     return MestoSchema;
 }());

@@ -12,7 +12,7 @@ export interface EntitySchema<T> {
   updateQuery?: string
 
   // acceptance join
-  joinKey?: string | string[]
+  joinKey?: string[]
   joinType?: string
 
   // join with other tables

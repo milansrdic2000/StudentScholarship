@@ -1,19 +1,28 @@
+import { format } from 'date-fns'
+import { formatDate } from '../utils/date-helper.js'
 import { ColumnSchema, EntitySchema, JoinMeta } from './entitySchema.js'
 import { Fakultet } from './fakultet.js'
-import { Mesto } from './mesto.js'
+import { Mesto, MestoSchema } from './mesto.js'
+import { Opstina, OpstinaSchema } from './opstina.js'
+import { Smer, SmerSchema } from './smer.js'
 
 export interface Student {
-  jmbg: string
+  jmbg: number
   imePrezime: string
   adresa: string
-  vojniRokOd: Date
-  vojniRokDo: Date
+  vojniRokOd?: Date
+  vojniRokDo?: Date
 
-  idMesta: number
-  sifraFakulteta: string
+  idMesta?: number
+  postanskiBroj?: number
 
-  mesto: Mesto
-  fakultet: Fakultet
+  sifraFakulteta?: string
+  idSmera?: number
+
+  opstina?: Opstina
+  smer?: Smer
+
+  registarskiBroj?: number
 }
 
 export class StudentSchema implements EntitySchema<Student> {
@@ -22,9 +31,10 @@ export class StudentSchema implements EntitySchema<Student> {
   primaryKey: string | string[]
   autoIncrement?: string
   columns: ColumnSchema<Student>[]
+  minimalColumns?: ColumnSchema<Student>[]
   insertQuery?: string
   updateQuery?: string
-  joinKey?: string | string[]
+  joinKey?: string[]
   joinMeta?: JoinMeta[]
   joinType?: string
   constructor(
@@ -32,16 +42,17 @@ export class StudentSchema implements EntitySchema<Student> {
     public filter: Partial<Student> = null
   ) {
     this.primaryKey = 'jmbg'
-    this.tableName = 'student_pogled'
+    this.tableName = 'student_detalji'
     this.tableAlias = 'st'
     this.columns = [
       { name: 'jmbg', primaryKey: true },
-      { name: 'imePrezime' },
+      // { name: 'imePrezime' },
       { name: 'adresa' },
       { name: 'vojniRokOd' },
       { name: 'vojniRokDo' },
       { name: 'idMesta', foreignKey: true },
-      { name: 'sifraFakulteta', foreignKey: true },
+      { name: 'postanskiBroj', foreignKey: true },
+      { name: 'registarskiBroj', foreignKey: false },
     ]
     this.filter = filter
     this.payload = payload
@@ -50,16 +61,31 @@ export class StudentSchema implements EntitySchema<Student> {
       {
         joinKeys: ['idMesta', 'postanskiBroj'],
         joinType: 'LEFT',
+        subJoin: new OpstinaSchema(),
       },
-      {
-        joinKeys: ['sifraFakulteta', 'idSmera'],
-        joinType: 'LEFT',
-      },
+      // {
+      //   joinKeys: ['sifraFakulteta', 'idSmera'],
+      //   joinType: 'LEFT',
+      //   subJoin: new SmerSchema(),
+      // },
     ]
 
-    this.joinKey = ['idMesta', 'postanskiBroj', 'sifraFakulteta', 'idSmera']
-    this.insertQuery = ` VALUES('${this.payload?.jmbg}','${this.payload?.imePrezime}','${this.payload?.adresa}','${this.payload?.vojniRokOd}','${this.payload?.vojniRokDo}',${this.payload?.idMesta},'${this.payload?.sifraFakulteta}')`
+    const vojniRokOd = this.payload?.vojniRokOd
+      ? `$'${formatDate(this.payload?.vojniRokOd)}'`
+      : null
+    const vojniRokDo = this.payload?.vojniRokDo
+      ? `$'${formatDate(this.payload?.vojniRokDo)}'`
+      : null
 
-    this.updateQuery = ` SET imePrezime='${this.payload?.imePrezime}', adresa='${this.payload?.adresa}', vojniRokOd='${this.payload?.vojniRokOd}', vojniRokDo='${this.payload?.vojniRokDo}', idMesta=${this.payload?.idMesta}, sifraFakulteta='${this.payload?.sifraFakulteta}'`
+    this.joinKey = ['idMesta', 'postanskiBroj', 'sifraFakulteta', 'idSmera']
+
+    this.insertQuery = ` VALUES(${this.payload?.jmbg},'${this.payload?.imePrezime}','${this.payload?.sifraFakulteta}','${this.payload?.idSmera}','${this.payload?.adresa}',${vojniRokOd},${vojniRokDo},${this.payload?.idMesta},${this.payload?.postanskiBroj},${this.payload?.registarskiBroj})`
+
+    this.updateQuery = ` SET imePrezime='${this.payload?.imePrezime}', adresa='${this.payload?.adresa}', vojniRokOd=${vojniRokOd}, vojniRokDo=${vojniRokDo}, idMesta=${this.payload?.idMesta}, sifraFakulteta='${this.payload?.sifraFakulteta}'`
+
+    this.minimalColumns = [
+      { name: 'jmbg', primaryKey: true },
+      { name: 'imePrezime' },
+    ]
   }
 }

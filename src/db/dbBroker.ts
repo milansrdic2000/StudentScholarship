@@ -1,5 +1,6 @@
 import oracledb, { Connection } from 'oracledb'
-import { ColumnSchema, EntitySchema } from '../models/entitySchema.js'
+import { ColumnSchema, EntitySchema, JoinMeta } from '../models/entitySchema.js'
+import { formatDate } from '../utils/date-helper.js'
 
 export const hello = 'hi mom!'
 export class DBBroker {
@@ -38,18 +39,14 @@ export class DBBroker {
       return err
     }
   }
-  private getSelectQuery(entitySchema: EntitySchema<any>): string {
+  private getFieldsForSchema(entitySchema: EntitySchema<any>): string {
     let sql = ''
     entitySchema.columns.forEach((item, index) => {
-      if (item.getter) {
-        sql +=
-          entitySchema.tableAlias + `.${item.getter} as "${String(item.name)}" `
-      } else {
-        sql += ` ${entitySchema.tableAlias}.${String(item.name)} `
-        if (item.alias) {
-          sql += ` as "${item.alias}" `
-        }
-      }
+      sql += ` ${entitySchema.tableAlias}.${
+        item.getter ? item.getter : String(item.name)
+      } `
+      sql += ` as "${item.alias ? item.alias : String(item.name)}" `
+
       if (index < entitySchema.columns.length - 1) {
         sql += ' , '
       }
@@ -73,44 +70,41 @@ export class DBBroker {
     })
     return sql
   }
-  public async select<model>(
-    mainSchema: EntitySchema<any>,
-    ...joinSchema: EntitySchema<any>[]
-  ): Promise<model[]> {
-    let sql = 'SELECT '
-    sql += this.getSelectQuery(mainSchema)
-    joinSchema.forEach((schema) => {
-      sql += ', ' + this.getSelectQuery(schema)
-    })
-    sql += ` FROM ${mainSchema.tableName} ${mainSchema.tableAlias}`
-
-    // JOINS
-    if (joinSchema?.length > 0) {
-      const joinMetas = mainSchema.joinMeta
-      joinSchema.forEach((schema, index) => {
-        // for each join schema, iterate through all join keys ( ON condition)
-        const joinMetaMain = mainSchema.joinMeta[index]
-        sql += ` ${joinMetaMain.joinType} JOIN ${schema.tableName} ${schema.tableAlias} ON `
-
-        joinMetaMain.joinKeys.forEach((key, j) => {
-          sql += `${mainSchema.tableAlias}.${joinMetaMain.joinKeys[j]} = ${schema.tableAlias}.${schema.joinKey[j]} `
-          if (j < joinMetaMain.joinKeys.length - 1) sql += ' AND '
+  private getJoinRecursive(mainSchema: EntitySchema<any>): string {
+    let sql = ''
+    const joinMeta = mainSchema.joinMeta
+    if (joinMeta?.length > 0) {
+      joinMeta.forEach((join, index) => {
+        const subSchema = join.subJoin
+        sql += ` ${join.joinType} JOIN ${subSchema.tableName} ${subSchema.tableAlias} ON `
+        join.joinKeys.forEach((key, j) => {
+          sql += `${mainSchema.tableAlias}.${join.joinKeys[j]} = ${subSchema.tableAlias}.${subSchema.joinKey[j]} `
+          if (j < join.joinKeys.length - 1) sql += ' AND '
         })
-        const joinMeta = schema.joinMeta
-        // check if each join schema has its own subjoins
-        if (joinMeta?.length > 0) {
-          joinMeta.forEach((subJoin, index) => {
-            if (subJoin.subJoin) {
-              sql += ` ${subJoin.joinType} JOIN ${subJoin.subJoin.tableName} ${subJoin.subJoin.tableAlias} ON `
-              subJoin.joinKeys.forEach((key, j) => {
-                sql += `${schema.tableAlias}.${subJoin.joinKeys[j]} = ${subJoin.subJoin.tableAlias}.${subJoin.subJoin.joinKey[j]} `
-                if (j < subJoin.joinKeys.length - 1) sql += ' AND '
-              })
-            }
-          })
+        if (subSchema.joinMeta) {
+          sql += this.getJoinRecursive(subSchema)
         }
       })
     }
+    return sql
+  }
+  private getFieldsRecursive(mainSchema: EntitySchema<any>): string {
+    let sql = ''
+    sql += this.getFieldsForSchema(mainSchema)
+    const joinMeta = mainSchema.joinMeta
+    joinMeta?.forEach((join) => {
+      sql += ',' + this.getFieldsRecursive(join.subJoin)
+    })
+    return sql
+  }
+  public async select<model>(
+    mainSchema: EntitySchema<model>
+  ): Promise<model[]> {
+    let sql = 'SELECT ' + this.getFieldsRecursive(mainSchema)
+
+    sql += ` FROM ${mainSchema.tableName} ${mainSchema.tableAlias}`
+    // JOINS
+    sql += this.getJoinRecursive(mainSchema)
     if (mainSchema.filter) {
       sql += this.getWhereQuery(mainSchema)
     }
@@ -143,7 +137,33 @@ export class DBBroker {
   public async update<model>(entitySchema: EntitySchema<model>): Promise<any> {
     let command = `UPDATE ${entitySchema.tableName} ${entitySchema.tableAlias} ${entitySchema.updateQuery}`
 
-    const string = '12345'
+    command += this.getWhereQuery(entitySchema)
+    const response = await this.executeQuery(command)
+    await this.connection.commit()
+    return response
+  }
+  public async patch<model>(entitySchema: EntitySchema<model>) {
+    let command = `UPDATE ${entitySchema.tableName} ${entitySchema.tableAlias} SET `
+    Object.keys(entitySchema.payload).forEach((key, index) => {
+      const prop = entitySchema.payload[key]
+      // only map through primitive objects (objects are ommited)
+      if (typeof prop === 'object' && !(prop instanceof Date)) {
+        return
+      }
+      command += `${key} = `
+
+      if (prop && prop instanceof Date) {
+        command += `'${formatDate(prop)}'`
+      } else if (typeof prop === 'string') {
+        command += `'${prop}'`
+      } else if (typeof prop !== 'object') {
+        command += prop
+      }
+      // append ',' if its not last prop
+      if (index < Object.keys(entitySchema.payload).length - 1) {
+        command += ' , '
+      }
+    })
     command += this.getWhereQuery(entitySchema)
     const response = await this.executeQuery(command)
     await this.connection.commit()

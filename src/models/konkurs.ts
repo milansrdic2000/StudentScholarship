@@ -1,6 +1,6 @@
 import { formatDate } from '../utils/date-helper.js'
 import { ColumnSchema, EntitySchema, JoinMeta } from './entitySchema.js'
-import { StavkaKonkursa } from './stavkaKonkursa.js'
+import { StavkaKonkursa, StavkaKonkursaSchema } from './stavkaKonkursa.js'
 
 export interface Konkurs {
   sifraKonkursa: string
@@ -16,7 +16,7 @@ export class KonkursSchema implements EntitySchema<Konkurs> {
   tableName: string
   tableAlias: string
   columns: ColumnSchema<Konkurs>[]
-  joinKey?: string | string[]
+  joinKey?: string[]
 
   joinMeta?: JoinMeta[]
   insertQuery?: string
@@ -26,7 +26,7 @@ export class KonkursSchema implements EntitySchema<Konkurs> {
     public filter: Partial<Konkurs> = null
   ) {
     this.primaryKey = 'sifraKonkursa'
-    this.joinKey = 'sifraKonkursa'
+    this.joinKey = ['sifraKonkursa']
     this.tableName = 'konkurs'
     this.tableAlias = 'k'
     this.columns = [
@@ -46,7 +46,13 @@ export class KonkursSchema implements EntitySchema<Konkurs> {
       ? formatDate(this.payload?.datumDo)
       : null
 
-    this.joinMeta = [{ joinType: 'LEFT', joinKeys: ['sifraKonkursa'] }]
+    this.joinMeta = [
+      {
+        joinType: 'LEFT',
+        joinKeys: ['sifraKonkursa'],
+        subJoin: new StavkaKonkursaSchema(),
+      },
+    ]
     this.insertQuery = ` VALUES('${this.payload?.sifraKonkursa}','${this.payload?.skolskaGodina}',konkurs_info('${datumOd}','${datumDo}',${this.payload?.brojMesta}))`
 
     this.updateQuery = ` SET skolskaGodina='${this.payload?.skolskaGodina}', konkursinfo=konkurs_info('${datumOd}','${datumDo}',${this.payload?.brojMesta})`

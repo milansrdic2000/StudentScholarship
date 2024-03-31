@@ -1,9 +1,11 @@
 import { ColumnSchema, EntitySchema } from './entitySchema.js'
+import { Smer } from './smer.js'
 
 export interface Fakultet {
   nazivFakulteta: string
   sifraFakulteta: string
-  idMesta: number
+  idMestaFakultet: number
+  listaSmerova?: Smer[]
 }
 export class FakultetSchema implements EntitySchema<Fakultet> {
   tableName: string
@@ -14,7 +16,7 @@ export class FakultetSchema implements EntitySchema<Fakultet> {
 
   insertQuery?: string
   updateQuery?: string
-  joinKey?: string | string[]
+  joinKey?: string[]
   joinType?: string
 
   constructor(
@@ -27,14 +29,14 @@ export class FakultetSchema implements EntitySchema<Fakultet> {
     this.columns = [
       { name: 'nazivFakulteta' },
       { name: 'sifraFakulteta', primaryKey: true },
-      { name: 'idMesta', foreignKey: true },
+      { name: 'idMestaFakultet', foreignKey: true, getter: 'idMesta' },
     ]
     this.filter = filter
     this.payload = payload
 
-    this.joinKey = 'idMesta'
-    this.insertQuery = ` VALUES('${this.payload?.nazivFakulteta}','${this.payload?.sifraFakulteta}',${this.payload?.idMesta})`
+    this.joinKey = ['idMesta']
+    this.insertQuery = ` VALUES('${this.payload?.nazivFakulteta}','${this.payload?.sifraFakulteta}',${this.payload?.idMestaFakultet})`
 
-    this.updateQuery = ` SET nazivFakulteta='${this.payload?.nazivFakulteta}', idMesta=${this.payload?.idMesta}`
+    this.updateQuery = ` SET nazivFakulteta='${this.payload?.nazivFakulteta}', idMesta=${this.payload?.idMestaFakultet}`
   }
 }

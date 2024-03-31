@@ -2,7 +2,7 @@ import { ColumnSchema, EntitySchema } from './entitySchema.js'
 
 export interface Mesto {
   idMesta: number
-  naziv: string
+  nazivMesta: string
 }
 
 export class MestoSchema implements EntitySchema<Mesto> {
@@ -14,7 +14,7 @@ export class MestoSchema implements EntitySchema<Mesto> {
 
   insertQuery?: string
   updateQuery?: string
-  joinKey?: string | string[]
+  joinKey?: string[]
   joinType?: string
 
   constructor(
@@ -24,14 +24,17 @@ export class MestoSchema implements EntitySchema<Mesto> {
     this.primaryKey = 'idMesta'
     this.tableName = 'mesto'
     this.tableAlias = 'm'
-    this.columns = [{ name: 'idMesta', primaryKey: true }, { name: 'naziv' }]
+    this.columns = [
+      { name: 'idMesta', primaryKey: true },
+      { name: 'nazivMesta' },
+    ]
     this.filter = filter
     this.payload = payload
 
     this.joinKey = ['idMesta']
 
-    this.insertQuery = ` VALUES(${this.payload?.idMesta},'${this.payload?.naziv}')`
+    this.insertQuery = ` VALUES(${this.payload?.idMesta},'${this.payload?.nazivMesta}')`
 
-    this.updateQuery = ` SET naziv='${this.payload?.naziv}'`
+    this.updateQuery = ` SET naziv='${this.payload?.nazivMesta}'`
   }
 }

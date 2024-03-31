@@ -3,7 +3,8 @@ import { Mesto, MestoSchema } from './mesto.js'
 
 export interface Opstina {
   postanskiBroj: number
-  naziv: string
+  nazivOpstine: string
+  nazivMesta: string
   idMesta: number
 }
 
@@ -16,7 +17,7 @@ export class OpstinaSchema implements EntitySchema<Opstina> {
 
   insertQuery?: string
   updateQuery?: string
-  joinKey?: string | string[]
+  joinKey?: string[]
   joinType?: string
   joinMeta?: JoinMeta[]
 
@@ -29,7 +30,10 @@ export class OpstinaSchema implements EntitySchema<Opstina> {
     this.tableAlias = 'o'
     this.columns = [
       { name: 'postanskiBroj', primaryKey: true },
-      { name: 'naziv' },
+      { name: 'nazivOpstine' },
+      {
+        name: 'nazivMesta',
+      },
       { name: 'idMesta', primaryKey: true },
     ]
     this.filter = filter
@@ -38,15 +42,9 @@ export class OpstinaSchema implements EntitySchema<Opstina> {
     this.joinKey = ['idMesta', 'postanskiBroj']
     this.joinType = 'LEFT'
 
-    this.joinMeta = [
-      {
-        joinKeys: ['idMesta'],
-        joinType: 'INNER',
-        subJoin: new MestoSchema(),
-      },
-    ]
-    this.insertQuery = ` VALUES(${this.payload?.postanskiBroj},'${this.payload?.naziv}',${this.payload?.idMesta})`
+    this.joinMeta = []
+    this.insertQuery = ` VALUES(${this.payload?.postanskiBroj},'${this.payload?.nazivOpstine}',${this.payload?.idMesta})`
 
-    this.updateQuery = ` SET naziv='${this.payload?.naziv}', idMesta=${this.payload?.idMesta}`
+    this.updateQuery = ` SET naziv='${this.payload?.nazivOpstine}', idMesta=${this.payload?.idMesta}`
   }
 }

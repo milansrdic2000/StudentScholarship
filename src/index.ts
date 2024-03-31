@@ -10,6 +10,8 @@ import cors from 'cors'
 import { konkursRouter } from './routers/konkurs.js'
 import { studentRouter } from './routers/studenti.js'
 import { oracleErrorHandler } from './errors/oracle-error-handler.js'
+import { mestoRouter } from './routers/mesto.js'
+import { fakultetRouter } from './routers/fakultet.js'
 
 const { NotFound } = httpErrors
 const app: Express = express()
@@ -18,6 +20,8 @@ app.use(cors())
 app.use(express.json())
 app.use('/konkursi', konkursRouter)
 app.use('/studenti', studentRouter)
+app.use('/mesta', mestoRouter)
+app.use('/fakulteti', fakultetRouter)
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello World!')
 })

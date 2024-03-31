@@ -16,13 +16,12 @@ import { formatDate, parseDate } from '../utils/date-helper.js'
 export const getKonkursi = responseWrapper(async (req, res, next) => {
   const konkursi = await DBBroker.getInstance().select<
     Konkurs & StavkaKonkursa
-  >(new KonkursSchema(), new StavkaKonkursaSchema())
+  >(new KonkursSchema())
   return buildApiResponse(parseKonkurs(konkursi))
 })
 export const getKonkurs = responseWrapper(async (req, res, next) => {
   const result = await DBBroker.getInstance().select<Konkurs & StavkaKonkursa>(
-    new KonkursSchema(null, { sifraKonkursa: req.params.sifraKonkursa }),
-    new StavkaKonkursaSchema()
+    new KonkursSchema(null, { sifraKonkursa: req.params.sifraKonkursa })
   )
   if (result.length === 0) {
     return buildApiResponse('Konkurs ne postoji', false, 404)

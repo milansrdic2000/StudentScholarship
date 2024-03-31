@@ -35,6 +35,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 import oracledb from 'oracledb';
+import { formatDate } from '../utils/date-helper.js';
 export var hello = 'hi mom!';
 export var DBBroker = (function () {
     function DBBroker() {
@@ -94,19 +95,11 @@ export var DBBroker = (function () {
             });
         });
     };
-    DBBroker.prototype.getSelectQuery = function (entitySchema) {
+    DBBroker.prototype.getFieldsForSchema = function (entitySchema) {
         var sql = '';
         entitySchema.columns.forEach(function (item, index) {
-            if (item.getter) {
-                sql +=
-                    entitySchema.tableAlias + ".".concat(item.getter, " as \"").concat(String(item.name), "\" ");
-            }
-            else {
-                sql += " ".concat(entitySchema.tableAlias, ".").concat(String(item.name), " ");
-                if (item.alias) {
-                    sql += " as \"".concat(item.alias, "\" ");
-                }
-            }
+            sql += " ".concat(entitySchema.tableAlias, ".").concat(item.getter ? item.getter : String(item.name), " ");
+            sql += " as \"".concat(item.alias ? item.alias : String(item.name), "\" ");
             if (index < entitySchema.columns.length - 1) {
                 sql += ' , ';
             }
@@ -131,48 +124,45 @@ export var DBBroker = (function () {
         });
         return sql;
     };
-    DBBroker.prototype.select = function (mainSchema) {
-        var joinSchema = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            joinSchema[_i - 1] = arguments[_i];
+    DBBroker.prototype.getJoinRecursive = function (mainSchema) {
+        var _this = this;
+        var sql = '';
+        var joinMeta = mainSchema.joinMeta;
+        if ((joinMeta === null || joinMeta === void 0 ? void 0 : joinMeta.length) > 0) {
+            joinMeta.forEach(function (join, index) {
+                var subSchema = join.subJoin;
+                sql += " ".concat(join.joinType, " JOIN ").concat(subSchema.tableName, " ").concat(subSchema.tableAlias, " ON ");
+                join.joinKeys.forEach(function (key, j) {
+                    sql += "".concat(mainSchema.tableAlias, ".").concat(join.joinKeys[j], " = ").concat(subSchema.tableAlias, ".").concat(subSchema.joinKey[j], " ");
+                    if (j < join.joinKeys.length - 1)
+                        sql += ' AND ';
+                });
+                if (subSchema.joinMeta) {
+                    sql += _this.getJoinRecursive(subSchema);
+                }
+            });
         }
+        return sql;
+    };
+    DBBroker.prototype.getFieldsRecursive = function (mainSchema) {
+        var _this = this;
+        var sql = '';
+        sql += this.getFieldsForSchema(mainSchema);
+        var joinMeta = mainSchema.joinMeta;
+        joinMeta === null || joinMeta === void 0 ? void 0 : joinMeta.forEach(function (join) {
+            sql += ',' + _this.getFieldsRecursive(join.subJoin);
+        });
+        return sql;
+    };
+    DBBroker.prototype.select = function (mainSchema) {
         return __awaiter(this, void 0, void 0, function () {
-            var sql, joinMetas, response;
-            var _this = this;
+            var sql, response;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        sql = 'SELECT ';
-                        sql += this.getSelectQuery(mainSchema);
-                        joinSchema.forEach(function (schema) {
-                            sql += ', ' + _this.getSelectQuery(schema);
-                        });
+                        sql = 'SELECT ' + this.getFieldsRecursive(mainSchema);
                         sql += " FROM ".concat(mainSchema.tableName, " ").concat(mainSchema.tableAlias);
-                        if ((joinSchema === null || joinSchema === void 0 ? void 0 : joinSchema.length) > 0) {
-                            joinMetas = mainSchema.joinMeta;
-                            joinSchema.forEach(function (schema, index) {
-                                var joinMetaMain = mainSchema.joinMeta[index];
-                                sql += " ".concat(joinMetaMain.joinType, " JOIN ").concat(schema.tableName, " ").concat(schema.tableAlias, " ON ");
-                                joinMetaMain.joinKeys.forEach(function (key, j) {
-                                    sql += "".concat(mainSchema.tableAlias, ".").concat(joinMetaMain.joinKeys[j], " = ").concat(schema.tableAlias, ".").concat(schema.joinKey[j], " ");
-                                    if (j < joinMetaMain.joinKeys.length - 1)
-                                        sql += ' AND ';
-                                });
-                                var joinMeta = schema.joinMeta;
-                                if ((joinMeta === null || joinMeta === void 0 ? void 0 : joinMeta.length) > 0) {
-                                    joinMeta.forEach(function (subJoin, index) {
-                                        if (subJoin.subJoin) {
-                                            sql += " ".concat(subJoin.joinType, " JOIN ").concat(subJoin.subJoin.tableName, " ").concat(subJoin.subJoin.tableAlias, " ON ");
-                                            subJoin.joinKeys.forEach(function (key, j) {
-                                                sql += "".concat(schema.tableAlias, ".").concat(subJoin.joinKeys[j], " = ").concat(subJoin.subJoin.tableAlias, ".").concat(subJoin.subJoin.joinKey[j], " ");
-                                                if (j < subJoin.joinKeys.length - 1)
-                                                    sql += ' AND ';
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-                        }
+                        sql += this.getJoinRecursive(mainSchema);
                         if (mainSchema.filter) {
                             sql += this.getWhereQuery(mainSchema);
                         }
@@ -230,12 +220,49 @@ export var DBBroker = (function () {
     };
     DBBroker.prototype.update = function (entitySchema) {
         return __awaiter(this, void 0, void 0, function () {
-            var command, string, response;
+            var command, response;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         command = "UPDATE ".concat(entitySchema.tableName, " ").concat(entitySchema.tableAlias, " ").concat(entitySchema.updateQuery);
-                        string = '12345';
+                        command += this.getWhereQuery(entitySchema);
+                        return [4, this.executeQuery(command)];
+                    case 1:
+                        response = _a.sent();
+                        return [4, this.connection.commit()];
+                    case 2:
+                        _a.sent();
+                        return [2, response];
+                }
+            });
+        });
+    };
+    DBBroker.prototype.patch = function (entitySchema) {
+        return __awaiter(this, void 0, void 0, function () {
+            var command, response;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        command = "UPDATE ".concat(entitySchema.tableName, " ").concat(entitySchema.tableAlias, " SET ");
+                        Object.keys(entitySchema.payload).forEach(function (key, index) {
+                            var prop = entitySchema.payload[key];
+                            if (typeof prop === 'object' && !(prop instanceof Date)) {
+                                return;
+                            }
+                            command += "".concat(key, " = ");
+                            if (prop && prop instanceof Date) {
+                                command += "'".concat(formatDate(prop), "'");
+                            }
+                            else if (typeof prop === 'string') {
+                                command += "'".concat(prop, "'");
+                            }
+                            else if (typeof prop !== 'object') {
+                                command += prop;
+                            }
+                            if (index < Object.keys(entitySchema.payload).length - 1) {
+                                command += ' , ';
+                            }
+                        });
                         command += this.getWhereQuery(entitySchema);
                         return [4, this.executeQuery(command)];
                     case 1:
