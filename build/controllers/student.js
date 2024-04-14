@@ -34,11 +34,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import { DBBroker } from '../db/dbBroker.js';
-import { OpstinaSchema } from '../models/opstina.js';
-import { SmerSchema } from '../models/smer.js';
-import { StudentSchema } from '../models/student.js';
-import { buildApiResponse, responseWrapper, } from '../utils/api-response-util.js';
+import { DBBroker } from "../db/dbBroker.js";
+import { OpstinaSchema } from "../models/opstina.js";
+import { SmerSchema } from "../models/smer.js";
+import { StudentSchema, parseStudentRow } from "../models/student.js";
+import { buildApiResponse, responseWrapper, } from "../utils/api-response-util.js";
 export var getStudenti = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
     var opstina, smer, schema, studenti;
     return __generator(this, function (_a) {
@@ -47,12 +47,12 @@ export var getStudenti = responseWrapper(function (req, res, next) { return __aw
                 opstina = new OpstinaSchema();
                 smer = new SmerSchema();
                 schema = new StudentSchema(null, null);
-                schema.tableName = 'student_osnovno';
+                schema.tableName = "student_osnovno";
                 schema.columns = schema.minimalColumns;
                 schema.joinMeta = [
                     {
-                        joinKeys: ['sifraFakulteta', 'idSmera'],
-                        joinType: 'LEFT',
+                        joinKeys: ["sifraFakulteta", "idSmera"],
+                        joinType: "LEFT",
                         subJoin: new SmerSchema(),
                     },
                 ];
@@ -93,7 +93,7 @@ export var patchStudent = responseWrapper(function (req, res, next) { return __a
                 student.vojniRokDo = vojniRokDo ? new Date(vojniRokDo) : null;
                 student.vojniRokOd = vojniRokOd ? new Date(vojniRokOd) : null;
                 studentSchema = new StudentSchema(student, { jmbg: parseInt(jmbg) });
-                studentSchema.tableName = 'student_pogled';
+                studentSchema.tableName = "student_pogled";
                 return [4, DBBroker.getInstance().patch(studentSchema)];
             case 1:
                 updated = _c.sent();
@@ -115,7 +115,7 @@ export var addStudent = responseWrapper(function (req, res, next) { return __awa
                 student.vojniRokDo = vojniRokDo ? new Date(vojniRokDo) : null;
                 student.vojniRokOd = vojniRokOd ? new Date(vojniRokOd) : null;
                 studentSchema = new StudentSchema(student);
-                studentSchema.tableName = 'student_pogled';
+                studentSchema.tableName = "student_pogled";
                 return [4, DBBroker.getInstance().insert(studentSchema)];
             case 1:
                 inserted = _c.sent();
@@ -123,43 +123,27 @@ export var addStudent = responseWrapper(function (req, res, next) { return __awa
         }
     });
 }); });
+export var deleteStudent = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var jmbg, studentSchema, student;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                jmbg = req.params.jmbg;
+                studentSchema = new StudentSchema(null, { jmbg: parseInt(jmbg) });
+                studentSchema.tableName = "student_pogled";
+                return [4, DBBroker.getInstance().delete(studentSchema)];
+            case 1:
+                student = _a.sent();
+                if (!student || student.length === 0)
+                    return [2, buildApiResponse(null, false, 404)];
+                return [2, buildApiResponse(student)];
+        }
+    });
+}); });
 var parseStudent = function (responseRows) {
     var studentiParsed = [];
     responseRows.forEach(function (row) {
-        var adresa = row.adresa, jmbg = row.jmbg, imePrezime = row.imePrezime, vojniRokOd = row.vojniRokOd, vojniRokDo = row.vojniRokDo, idMesta = row.idMesta, postanskiBroj = row.postanskiBroj, nazivMesta = row.nazivMesta, nazivOpstine = row.nazivOpstine, nazivSmera = row.nazivSmera, nazivFakulteta = row.nazivFakulteta, idSmera = row.idSmera, sifraFakulteta = row.sifraFakulteta, idMestaFakultet = row.idMestaFakultet, trajanjeNastave = row.trajanjeNastave, registarskiBroj = row.registarskiBroj;
-        var mesto = {
-            idMesta: idMesta,
-            nazivMesta: nazivMesta,
-        };
-        var opstina = {
-            idMesta: idMesta,
-            nazivOpstine: nazivOpstine,
-            nazivMesta: nazivMesta,
-            postanskiBroj: postanskiBroj,
-        };
-        var fakultet = {
-            idMestaFakultet: idMestaFakultet,
-            nazivFakulteta: nazivFakulteta,
-            sifraFakulteta: sifraFakulteta,
-        };
-        var smer = {
-            idSmera: idSmera,
-            nazivSmera: nazivSmera,
-            trajanjeNastave: trajanjeNastave,
-            sifraFakulteta: sifraFakulteta,
-            fakultet: fakultet,
-        };
-        var s = {
-            adresa: adresa,
-            jmbg: jmbg,
-            imePrezime: imePrezime,
-            vojniRokOd: vojniRokOd,
-            vojniRokDo: vojniRokDo,
-            opstina: opstina,
-            smer: smer,
-            registarskiBroj: registarskiBroj,
-        };
-        studentiParsed.push(s);
+        studentiParsed.push(parseStudentRow(row));
     });
     return studentiParsed;
 };

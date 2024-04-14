@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import {
   addStudent,
+  deleteStudent,
   getStudent,
   getStudenti,
   patchStudent,
@@ -12,3 +13,5 @@ studentRouter.get('/', getStudenti)
 studentRouter.get('/:jmbg', getStudent)
 studentRouter.patch('/:jmbg', patchStudent)
 studentRouter.post('/', addStudent)
+studentRouter.delete('/:jmbg', deleteStudent)
+ 

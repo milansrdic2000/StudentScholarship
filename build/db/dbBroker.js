@@ -34,10 +34,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import oracledb from 'oracledb';
-import { formatDate } from '../utils/date-helper.js';
-export var hello = 'hi mom!';
-export var DBBroker = (function () {
+import oracledb from "oracledb";
+import { formatDate } from "../utils/date-helper.js";
+import createHttpError from "http-errors";
+export var hello = "hi mom!";
+var DBBroker = (function () {
     function DBBroker() {
         oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
     }
@@ -61,9 +62,9 @@ export var DBBroker = (function () {
                         _b.trys.push([0, 2, , 3]);
                         _a = this;
                         return [4, oracledb.getConnection({
-                                user: 'c##mr',
-                                password: 'c##mr',
-                                connectString: 'localhost/orcl',
+                                user: "c##mr",
+                                password: "c##mr",
+                                connectString: "192.168.0.11/orcl",
                             })];
                     case 1:
                         _a.connection = _b.sent();
@@ -95,38 +96,41 @@ export var DBBroker = (function () {
             });
         });
     };
+    DBBroker.prototype.rollback = function () {
+        this.connection.rollback();
+    };
     DBBroker.prototype.getFieldsForSchema = function (entitySchema) {
-        var sql = '';
+        var sql = "";
         entitySchema.columns.forEach(function (item, index) {
             sql += " ".concat(entitySchema.tableAlias, ".").concat(item.getter ? item.getter : String(item.name), " ");
             sql += " as \"".concat(item.alias ? item.alias : String(item.name), "\" ");
             if (index < entitySchema.columns.length - 1) {
-                sql += ' , ';
+                sql += " , ";
             }
         });
         return sql;
     };
     DBBroker.prototype.getWhereQuery = function (entitySchema) {
-        var sql = '';
+        var sql = "";
         var criteria = entitySchema.filter;
-        sql += ' WHERE ';
+        sql += " WHERE ";
         Object.keys(criteria).forEach(function (key, index) {
             sql += "".concat(entitySchema.tableAlias, ".").concat(key, " = ");
-            if (typeof criteria[key] === 'string') {
+            if (typeof criteria[key] === "string") {
                 sql += "'".concat(criteria[key], "'");
             }
             else {
                 sql += criteria[key];
             }
             if (index < Object.keys(criteria).length - 1) {
-                sql += ' AND ';
+                sql += " AND ";
             }
         });
         return sql;
     };
     DBBroker.prototype.getJoinRecursive = function (mainSchema) {
         var _this = this;
-        var sql = '';
+        var sql = "";
         var joinMeta = mainSchema.joinMeta;
         if ((joinMeta === null || joinMeta === void 0 ? void 0 : joinMeta.length) > 0) {
             joinMeta.forEach(function (join, index) {
@@ -135,7 +139,7 @@ export var DBBroker = (function () {
                 join.joinKeys.forEach(function (key, j) {
                     sql += "".concat(mainSchema.tableAlias, ".").concat(join.joinKeys[j], " = ").concat(subSchema.tableAlias, ".").concat(subSchema.joinKey[j], " ");
                     if (j < join.joinKeys.length - 1)
-                        sql += ' AND ';
+                        sql += " AND ";
                 });
                 if (subSchema.joinMeta) {
                     sql += _this.getJoinRecursive(subSchema);
@@ -146,11 +150,11 @@ export var DBBroker = (function () {
     };
     DBBroker.prototype.getFieldsRecursive = function (mainSchema) {
         var _this = this;
-        var sql = '';
+        var sql = "";
         sql += this.getFieldsForSchema(mainSchema);
         var joinMeta = mainSchema.joinMeta;
         joinMeta === null || joinMeta === void 0 ? void 0 : joinMeta.forEach(function (join) {
-            sql += ',' + _this.getFieldsRecursive(join.subJoin);
+            sql += "," + _this.getFieldsRecursive(join.subJoin);
         });
         return sql;
     };
@@ -160,7 +164,7 @@ export var DBBroker = (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        sql = 'SELECT ' + this.getFieldsRecursive(mainSchema);
+                        sql = "SELECT " + this.getFieldsRecursive(mainSchema);
                         sql += " FROM ".concat(mainSchema.tableName, " ").concat(mainSchema.tableAlias);
                         sql += this.getJoinRecursive(mainSchema);
                         if (mainSchema.filter) {
@@ -182,7 +186,7 @@ export var DBBroker = (function () {
                     case 0:
                         command = "DELETE FROM ".concat(entitySchema.tableName, " ").concat(entitySchema.tableAlias, " ");
                         if (!entitySchema.filter)
-                            throw new Error('No filter specified');
+                            throw new Error("No filter specified");
                         command += this.getWhereQuery(entitySchema);
                         return [4, this.executeQuery(command)];
                     case 1:
@@ -195,9 +199,10 @@ export var DBBroker = (function () {
             });
         });
     };
-    DBBroker.prototype.insert = function (entitySchema) {
-        return __awaiter(this, void 0, void 0, function () {
+    DBBroker.prototype.insert = function (entitySchema_1) {
+        return __awaiter(this, arguments, void 0, function (entitySchema, manageTransaction) {
             var command, output, result;
+            if (manageTransaction === void 0) { manageTransaction = true; }
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -207,13 +212,16 @@ export var DBBroker = (function () {
                             command += "RETURNING ".concat(entitySchema.autoIncrement, " INTO :id ");
                             output = { id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER } };
                         }
+                        console.log(command);
                         return [4, DBBroker._instance.connection.execute(command, output)];
                     case 1:
                         result = _a.sent();
+                        if (!manageTransaction) return [3, 3];
                         return [4, this.connection.commit()];
                     case 2:
                         _a.sent();
-                        return [2, result];
+                        _a.label = 3;
+                    case 3: return [2, result];
                 }
             });
         });
@@ -229,9 +237,6 @@ export var DBBroker = (function () {
                         return [4, this.executeQuery(command)];
                     case 1:
                         response = _a.sent();
-                        return [4, this.connection.commit()];
-                    case 2:
-                        _a.sent();
                         return [2, response];
                 }
             });
@@ -245,24 +250,33 @@ export var DBBroker = (function () {
                     case 0:
                         command = "UPDATE ".concat(entitySchema.tableName, " ").concat(entitySchema.tableAlias, " SET ");
                         Object.keys(entitySchema.payload).forEach(function (key, index) {
+                            var databaseColumn = entitySchema.getDatabaseColumnName
+                                ? entitySchema.getDatabaseColumnName(key)
+                                : key;
+                            if (!databaseColumn)
+                                return;
+                            if (key === entitySchema.primaryKey)
+                                return;
                             var prop = entitySchema.payload[key];
-                            if (typeof prop === 'object' && !(prop instanceof Date)) {
+                            if (prop === undefined)
+                                return;
+                            if (typeof prop === "object" && !(prop instanceof Date)) {
                                 return;
                             }
-                            command += "".concat(key, " = ");
+                            command += "".concat(databaseColumn, " = ");
                             if (prop && prop instanceof Date) {
                                 command += "'".concat(formatDate(prop), "'");
                             }
-                            else if (typeof prop === 'string') {
+                            else if (typeof prop === "string") {
                                 command += "'".concat(prop, "'");
                             }
-                            else if (typeof prop !== 'object') {
+                            else if (typeof prop !== "object") {
                                 command += prop;
                             }
-                            if (index < Object.keys(entitySchema.payload).length - 1) {
-                                command += ' , ';
-                            }
+                            command += " , ";
                         });
+                        command = command.slice(0, -2);
+                        console.log(command);
                         command += this.getWhereQuery(entitySchema);
                         return [4, this.executeQuery(command)];
                     case 1:
@@ -270,6 +284,8 @@ export var DBBroker = (function () {
                         return [4, this.connection.commit()];
                     case 2:
                         _a.sent();
+                        if (response.rowsAffected === 0)
+                            throw createHttpError(404, "Patch Resource Not found hehe");
                         return [2, response];
                 }
             });
@@ -282,4 +298,5 @@ export var DBBroker = (function () {
     DBBroker._instance = null;
     return DBBroker;
 }());
+export { DBBroker };
 //# sourceMappingURL=dbBroker.js.map

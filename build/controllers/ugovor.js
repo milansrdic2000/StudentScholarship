@@ -34,75 +34,31 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import { DBBroker } from "./db/dbBroker.js";
-import express from "express";
-import { errorHandler } from "./errors/error-handler.js";
-import { notFoundMiddleware } from "./middleware/not-found-middleware.js";
-import asyncHandler from "express-async-handler";
-import httpErrors from "http-errors";
-import cors from "cors";
-import { konkursRouter } from "./routers/konkurs.js";
-import { studentRouter } from "./routers/studenti.js";
-import { oracleErrorHandler } from "./errors/oracle-error-handler.js";
-import { mestoRouter } from "./routers/mesto.js";
-import { fakultetRouter } from "./routers/fakultet.js";
-import { platniProgramRouter } from "./routers/platniProgram.js";
-import { ugovorRouter } from "./routers/ugovor.js";
-import { prijavaRouter } from "./routers/prijava.js";
-var NotFound = httpErrors.NotFound;
-var app = express();
-app.use(cors());
-app.use(express.json());
-app.use("/api/konkursi", konkursRouter);
-app.use("/api/studenti", studentRouter);
-app.use("/api/mesta", mestoRouter);
-app.use("/api/fakulteti", fakultetRouter);
-app.use("/api/platni-programi", platniProgramRouter);
-app.use("/api/ugovori", ugovorRouter);
-app.use("/api/prijave", prijavaRouter);
-app.get("/", function (req, res) {
-    res.send("Hello World!");
-});
-app.get("/home", asyncHandler(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
-    return __generator(this, function (_a) {
-        res.json({ message: "Hello from home" });
-        return [2];
-    });
-}); }));
-app.use(notFoundMiddleware);
-app.use(oracleErrorHandler);
-app.use(errorHandler);
-function start() {
-    return __awaiter(this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4, DBBroker.getInstance().openConnection()];
-                case 1:
-                    _a.sent();
-                    console.log("delikventsid");
-                    return [2];
-            }
-        });
-    });
-}
-app.listen(4000, function () { return __awaiter(void 0, void 0, void 0, function () {
-    var err_1;
+import { DBBroker } from "../db/dbBroker.js";
+import { UgovorSchema } from "../models/ugovor.js";
+import { buildApiResponse, responseWrapper, } from "../utils/api-response-util.js";
+export var getUgovori = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var result;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0:
-                _a.trys.push([0, 2, , 3]);
-                return [4, start()];
+            case 0: return [4, DBBroker.getInstance().select(new UgovorSchema())];
             case 1:
-                _a.sent();
-                console.log("Server is running on port 5000");
-                return [3, 3];
-            case 2:
-                err_1 = _a.sent();
-                console.log("Error with starting server:");
-                console.error(err_1);
-                return [3, 3];
-            case 3: return [2];
+                result = _a.sent();
+                return [2, buildApiResponse(result)];
         }
     });
 }); });
-//# sourceMappingURL=index.js.map
+export var getUgovor = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var brojUgovora, result;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                brojUgovora = req.params.brojUgovora;
+                return [4, DBBroker.getInstance().select(new UgovorSchema(null, { brojUgovora: parseInt(brojUgovora) }))];
+            case 1:
+                result = _a.sent();
+                return [2, buildApiResponse(result[0])];
+        }
+    });
+}); });
+//# sourceMappingURL=ugovor.js.map

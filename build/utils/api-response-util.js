@@ -34,6 +34,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+import { DBBroker } from "../db/dbBroker.js";
 export var buildApiResponse = function (data, success, code) {
     if (success === void 0) { success = true; }
     if (code === void 0) { code = 200; }
@@ -57,6 +58,8 @@ export var responseWrapper = function (fn) {
                     return [3, 3];
                 case 2:
                     err_1 = _a.sent();
+                    console.log("rollbackujem");
+                    DBBroker.getInstance().rollback();
                     next(err_1);
                     return [3, 3];
                 case 3: return [2];

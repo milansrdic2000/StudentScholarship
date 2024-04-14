@@ -1,5 +1,5 @@
-import { formatDate } from '../utils/date-helper.js';
-import { StavkaKonkursaSchema } from './stavkaKonkursa.js';
+import { formatDate } from "../utils/date-helper.js";
+import { StavkaKonkursaSchema } from "./stavkaKonkursa.js";
 var KonkursSchema = (function () {
     function KonkursSchema(payload, filter) {
         if (payload === void 0) { payload = null; }
@@ -7,16 +7,16 @@ var KonkursSchema = (function () {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         this.payload = payload;
         this.filter = filter;
-        this.primaryKey = 'sifraKonkursa';
-        this.joinKey = ['sifraKonkursa'];
-        this.tableName = 'konkurs';
-        this.tableAlias = 'k';
+        this.primaryKey = "sifraKonkursa";
+        this.joinKey = ["sifraKonkursa"];
+        this.tableName = "konkurs";
+        this.tableAlias = "k";
         this.columns = [
-            { name: 'sifraKonkursa', alias: 'sifraKonkursa', primaryKey: true },
-            { name: 'skolskaGodina', alias: 'skolskaGodina' },
-            { name: 'datumOd', getter: 'konkursinfo.get_datum_od()' },
-            { name: 'datumDo', getter: 'konkursinfo.get_datum_do()' },
-            { name: 'brojMesta', getter: 'konkursinfo.get_broj_mesta()' },
+            { name: "sifraKonkursa", alias: "sifraKonkursa", primaryKey: true },
+            { name: "skolskaGodina", alias: "skolskaGodina" },
+            { name: "datumOd", getter: "konkursinfo.get_datum_od()" },
+            { name: "datumDo", getter: "konkursinfo.get_datum_do()" },
+            { name: "brojMesta", getter: "konkursinfo.get_broj_mesta()" },
         ];
         this.filter = filter;
         this.payload = payload;
@@ -28,8 +28,8 @@ var KonkursSchema = (function () {
             : null;
         this.joinMeta = [
             {
-                joinType: 'LEFT',
-                joinKeys: ['sifraKonkursa'],
+                joinType: "LEFT",
+                joinKeys: ["sifraKonkursa"],
                 subJoin: new StavkaKonkursaSchema(),
             },
         ];

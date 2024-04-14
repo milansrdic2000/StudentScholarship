@@ -1,30 +1,33 @@
-import { NextFunction, Response, Request } from 'express'
-import { ApiResponse } from './apiResponse.js'
+import { NextFunction, Response, Request } from "express";
+import { ApiResponse } from "./apiResponse.js";
+import { DBBroker } from "../db/dbBroker.js";
 
 export const buildApiResponse = function (
   data: any | string,
   success = true,
   code = 200
 ): ApiResponse {
-  return { data, success, code }
-}
+  return { data, success, code };
+};
 export const responseWrapper = (
   fn: (req: Request, res: Response, next: NextFunction) => Promise<ApiResponse>
 ) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await fn(req, res, next)
-      const { data, code, success } = result
+      const result = await fn(req, res, next);
+      const { data, code, success } = result;
       if (code === 404) {
-        return res.status(code).json({ success: false, message: data })
+        return res.status(code).json({ success: false, message: data });
       }
-      res.status(code || 200).json({ success: success ?? true, data })
+      res.status(code || 200).json({ success: success ?? true, data });
     } catch (err) {
-      next(err)
+      console.log("rollbackujem");
+      DBBroker.getInstance().rollback();
+      next(err);
     }
-  }
-}
+  };
+};
 const simulateWait = () =>
   new Promise<any>((resolve, reject) => {
-    setTimeout(() => resolve(true), 2000)
-  })
+    setTimeout(() => resolve(true), 2000);
+  });
