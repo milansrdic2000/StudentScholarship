@@ -140,7 +140,6 @@ export class DBBroker {
       command += `RETURNING ${entitySchema.autoIncrement} INTO :id `;
       output = { id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER } };
     }
-    console.log(command);
     const result = await DBBroker._instance.connection.execute(command, output);
     if (manageTransaction) await this.connection.commit();
 
@@ -175,6 +174,8 @@ export class DBBroker {
         command += `'${formatDate(prop)}'`;
       } else if (typeof prop === "string") {
         command += `'${prop}'`;
+      } else if (typeof prop === "boolean") {
+        command += prop ? 1 : 0;
       } else if (typeof prop !== "object") {
         command += prop;
       }
@@ -183,7 +184,7 @@ export class DBBroker {
       command += " , ";
     });
     command = command.slice(0, -2);
-    console.log(command);
+
     command += this.getWhereQuery(entitySchema);
     const response = await this.executeQuery(command);
     await this.connection.commit();
@@ -192,6 +193,7 @@ export class DBBroker {
     return response;
   }
   public executeQuery(sql: string, binds: any[] = []): Promise<any> {
+    console.log(sql);
     return this.connection.execute(sql, binds);
   }
 }

@@ -212,7 +212,6 @@ var DBBroker = (function () {
                             command += "RETURNING ".concat(entitySchema.autoIncrement, " INTO :id ");
                             output = { id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER } };
                         }
-                        console.log(command);
                         return [4, DBBroker._instance.connection.execute(command, output)];
                     case 1:
                         result = _a.sent();
@@ -270,13 +269,15 @@ var DBBroker = (function () {
                             else if (typeof prop === "string") {
                                 command += "'".concat(prop, "'");
                             }
+                            else if (typeof prop === "boolean") {
+                                command += prop ? 1 : 0;
+                            }
                             else if (typeof prop !== "object") {
                                 command += prop;
                             }
                             command += " , ";
                         });
                         command = command.slice(0, -2);
-                        console.log(command);
                         command += this.getWhereQuery(entitySchema);
                         return [4, this.executeQuery(command)];
                     case 1:
@@ -293,6 +294,7 @@ var DBBroker = (function () {
     };
     DBBroker.prototype.executeQuery = function (sql, binds) {
         if (binds === void 0) { binds = []; }
+        console.log(sql);
         return this.connection.execute(sql, binds);
     };
     DBBroker._instance = null;

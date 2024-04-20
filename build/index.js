@@ -49,6 +49,7 @@ import { fakultetRouter } from "./routers/fakultet.js";
 import { platniProgramRouter } from "./routers/platniProgram.js";
 import { ugovorRouter } from "./routers/ugovor.js";
 import { prijavaRouter } from "./routers/prijava.js";
+import { oslobodjenjeRouter } from "./routers/oslobodjenje.js";
 var NotFound = httpErrors.NotFound;
 var app = express();
 app.use(cors());
@@ -60,6 +61,7 @@ app.use("/api/fakulteti", fakultetRouter);
 app.use("/api/platni-programi", platniProgramRouter);
 app.use("/api/ugovori", ugovorRouter);
 app.use("/api/prijave", prijavaRouter);
+app.use("/api/oslobodjenje", oslobodjenjeRouter);
 app.get("/", function (req, res) {
     res.send("Hello World!");
 });

@@ -16,6 +16,7 @@ import { platniProgramRouter } from "./routers/platniProgram.js";
 import { ugovorRouter } from "./routers/ugovor.js";
 import { getPrijave } from "./controllers/prijava.js";
 import { prijavaRouter } from "./routers/prijava.js";
+import { oslobodjenjeRouter } from "./routers/oslobodjenje.js";
 
 const { NotFound } = httpErrors;
 const app: Express = express();
@@ -29,6 +30,7 @@ app.use("/api/fakulteti", fakultetRouter);
 app.use("/api/platni-programi", platniProgramRouter);
 app.use("/api/ugovori", ugovorRouter);
 app.use("/api/prijave", prijavaRouter);
+app.use("/api/oslobodjenje", oslobodjenjeRouter);
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World!");
 });
