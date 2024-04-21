@@ -34,10 +34,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import { DBBroker } from '../db/dbBroker.js';
-import { MestoSchema } from '../models/mesto.js';
-import { OpstinaSchema } from '../models/opstina.js';
-import { buildApiResponse, responseWrapper, } from '../utils/api-response-util.js';
+import { DBBroker } from "../db/dbBroker.js";
+import { MestoSchema } from "../models/mesto.js";
+import { OpstinaSchema } from "../models/opstina.js";
+import { buildApiResponse, responseWrapper, } from "../utils/api-response-util.js";
 export var getMesta = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
     var mesta;
     return __generator(this, function (_a) {
@@ -46,6 +46,84 @@ export var getMesta = responseWrapper(function (req, res, next) { return __await
             case 1:
                 mesta = _a.sent();
                 return [2, buildApiResponse(mesta)];
+        }
+    });
+}); });
+export var deleteMesta = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var result;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4, DBBroker.getInstance().delete(new MestoSchema(null, { idMesta: parseInt(req.params.idMesta) }))];
+            case 1:
+                result = _a.sent();
+                return [2, buildApiResponse(result)];
+        }
+    });
+}); });
+export var deleteOpstina = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var result;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4, DBBroker.getInstance().delete(new OpstinaSchema(null, {
+                    postanskiBroj: parseInt(req.params.postanskiBroj),
+                }))];
+            case 1:
+                result = _a.sent();
+                return [2, buildApiResponse(result)];
+        }
+    });
+}); });
+export var addMesto = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var mesto, result;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                mesto = req.body;
+                return [4, DBBroker.getInstance().insert(new MestoSchema(mesto))];
+            case 1:
+                result = _a.sent();
+                return [2, buildApiResponse(result)];
+        }
+    });
+}); });
+export var patchMesto = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var mesto, result;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                mesto = req.body;
+                return [4, DBBroker.getInstance().patch(new MestoSchema(mesto, { idMesta: parseInt(req.params.idMesta) }))];
+            case 1:
+                result = _a.sent();
+                return [2, buildApiResponse(result)];
+        }
+    });
+}); });
+export var patchOpstina = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var opstina, result;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                opstina = req.body;
+                return [4, DBBroker.getInstance().patch(new OpstinaSchema(opstina, {
+                        postanskiBroj: parseInt(req.params.postanskiBroj),
+                    }))];
+            case 1:
+                result = _a.sent();
+                return [2, buildApiResponse(result)];
+        }
+    });
+}); });
+export var addOpstina = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+    var opstina, result;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                opstina = req.body;
+                return [4, DBBroker.getInstance().insert(new OpstinaSchema(opstina))];
+            case 1:
+                result = _a.sent();
+                return [2, buildApiResponse(result)];
         }
     });
 }); });

@@ -50,11 +50,29 @@ export const getZahtev = responseWrapper(async (req, res) => {
 });
 export const getAllZahtevi = responseWrapper(async (req, res) => {
   const zahtevSchema = new ZahtevSchema();
-  zahtevSchema.joinMeta = [];
+  zahtevSchema.joinMeta = [
+    {
+      subJoin: new ZaposleniSchema(),
+      joinKeys: ["vodja"],
+      joinType: "LEFT",
+    },
+  ];
   if (req.query?.partition) {
     zahtevSchema.tableName = `zahtev_za_oslobadjanje partition (${req.query.partition}) `;
   }
-  const result = await DBBroker.getInstance().select(zahtevSchema);
+  let result = await DBBroker.getInstance().select<
+    Zaposleni & ZahtevZaOslobodjenje
+  >(zahtevSchema);
+  // add vodja name to see in grid table
+  result = result.map((zahtev) => {
+    return {
+      ...zahtev,
+      vodjaZaposleni: {
+        jmbg: zahtev.vodja,
+        imePrezime: zahtev.imePrezime,
+      },
+    };
+  });
   return buildApiResponse(result);
 });
 

@@ -34,10 +34,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import { DBBroker } from '../db/dbBroker.js';
-import { KonkursSchema } from '../models/konkurs.js';
-import { StavkaKonkursaSchema, } from '../models/stavkaKonkursa.js';
-import { buildApiResponse, responseWrapper, } from '../utils/api-response-util.js';
+import { DBBroker } from "../db/dbBroker.js";
+import { KonkursSchema } from "../models/konkurs.js";
+import { StavkaKonkursaSchema, } from "../models/stavkaKonkursa.js";
+import { buildApiResponse, responseWrapper, } from "../utils/api-response-util.js";
 export var getKonkursi = responseWrapper(function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
     var konkursi;
     return __generator(this, function (_a) {
@@ -57,7 +57,7 @@ export var getKonkurs = responseWrapper(function (req, res, next) { return __awa
             case 1:
                 result = _a.sent();
                 if (result.length === 0) {
-                    return [2, buildApiResponse('Konkurs ne postoji', false, 404)];
+                    return [2, buildApiResponse("Konkurs ne postoji", false, 404)];
                 }
                 return [2, buildApiResponse(parseKonkurs(result))];
         }
@@ -84,10 +84,10 @@ export var addKonkurs = responseWrapper(function (req, res, next) { return __awa
                 _a = req.body, sifraKonkursa = _a.sifraKonkursa, skolskaGodina = _a.skolskaGodina, datumOd = _a.datumOd, datumDo = _a.datumDo, brojMesta = _a.brojMesta;
                 return [4, DBBroker.getInstance().insert(new KonkursSchema({
                         sifraKonkursa: sifraKonkursa,
-                        skolskaGodina: '2021/2022',
-                        datumOd: new Date(),
-                        datumDo: new Date(),
-                        brojMesta: 456,
+                        skolskaGodina: skolskaGodina,
+                        datumOd: new Date(datumOd),
+                        datumDo: new Date(datumDo),
+                        brojMesta: brojMesta,
                     }))];
             case 1:
                 dbRes = _b.sent();
